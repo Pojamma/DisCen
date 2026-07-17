@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--   Bob Robles 2023                -->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+  <title>Interactive Maze Game</title>
+  <style>
+    canvas {
+      border: 1px solid #000;
+      touch-action: none;
+      background-color: #f0e4d7;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 15px 32px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 20px;
+      margin: 10px 2px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .button-container {
+      text-align: center;
+    }
+    #clearButton {
+      margin-top: 10px;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      background-color: rgba(255, 255, 255, 0.7);
+      padding: 10px;
+      max-width: 90%;
+      margin: 20px auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-family: 'Arial', sans-serif;
+    }
+    h1 {
+      font-family: 'Permanent Marker', cursive;
+      text-align: center;
+      color: #333;
+    }
+    body {
+      background-image: url('background.jpg');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+    select {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 5px;
+      margin: 10px 2px;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.3s ease;
+    }
+    select:hover {
+      background-color: #45a049;
+    }
+    .center-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh; /* Center vertically on the page */
+}
+
+
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
+</head>
+<body style="background-image: url('background.jpg');">
+	<div class="center-content">
+  <h1 id="userGreeting">Crazy Maze</h1>
+  <canvas id="mazeCanvas" width="400" height="400"></canvas>
+  <div class="button-container">
+    <canvas id="colorPickerCanvas" width="50" height="50" style="border:1px solid #000;"></canvas> <!-- Color picker canvas -->
+    <input type="color" id="colorPicker" style="display:none;"> <!-- Color picker input -->
+    <button id="undoButton"><i class="fas fa-undo"></i></button>
+    <button id="clearButton"><i class="fas fa-trash"></i></button>
+    <button id="newMazeButton"><i class="fas fa-plus"></i></button>
+    <select id="difficultySelector">
+      <option value="4">Baby</option>
+      <option value="6" selected>Easy</option>
+      <option value="8">Medium</option>
+      <option value="10">Tuff</option>
+      <option value="12">Hard</option>
+      <option value="14">Expert</option>
+      <option value="16">Genius</option>
+    </select>
+  </div>
+</div>
+  <script>
+    const canvas = document.getElementById('mazeCanvas');
+    const ctx = canvas.getContext('2d');
+    let mazeSize; // Size of the maze
+    let maze = []; // Maze array
+    let cellSize;
+    const stack = [];
+    const traceThickness = 8; // Increase trace thickness
+    const wallThickness = 3; // Increase wall thickness
+    const colorPickerCanvas = document.getElementById('colorPickerCanvas');
+    const colorCtx = colorPickerCanvas.getContext('2d');
+    let currentColor = '#FF0000'; // Default color is now red
+    let drawnLines = [];
+    let isDrawing = false;
+    
+    initializeMaze();
+    drawMaze();
+    drawX(0, 0); // Draw X for the starting cell
+    drawX(mazeSize - 1, mazeSize - 1); // Draw X for the ending cell
+    drawColorCircle();
+    displayUserName();
+
+    // ===== functions =====
+    
+    function getUserInfoFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        userName: params.get('user'),
+        nickname: params.get('nickname')
+      };
+    }
+
+    function displayUserName() {
+      const userInfo = getUserInfoFromURL();
+      if (userInfo.userName) {
+        document.getElementById('userGreeting').innerHTML = 'Hello ' + userInfo.nickname + '<br> Welcome to the Crazy Maze!';
+      }
+    }
+
+    // Draw an X in a specified cell
+    function drawX(cellX, cellY) {
+      const x = cellX * cellSize;
+      const y = cellY * cellSize;
+      ctx.strokeStyle = 'green';
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + cellSize, y + cellSize);
+      ctx.moveTo(x + cellSize, y);
+      ctx.lineTo(x, y + cellSize);
+      ctx.stroke();
+      // Reset the stroke color to the current color after drawing the X
+      ctx.strokeStyle = currentColor;
+    }
+    function drawWall(fromX, fromY, toX, toY) {
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.lineWidth = wallThickness; // Set the wall thickness
+      ctx.stroke();
+    }
+    function handleDrawing(touchPos) {
+      if (isDrawing) {
+        ctx.lineTo(touchPos.x, touchPos.y);
+        ctx.stroke();
+
+        drawnLines.push({
+          fromX: ctx.currentX,
+          fromY: ctx.currentY,
+          toX: touchPos.x,
+          toY: touchPos.y,
+          color: ctx.strokeStyle, // Store the current color
+          thickness: ctx.lineWidth // Store the thickness
+        });
+
+        ctx.currentX = touchPos.x;
+        ctx.currentY = touchPos.y;
+      }
+    }
+    function redrawMazeAndLines() {
+      drawMaze();
+
+      drawnLines.forEach(item => {
+        ctx.strokeStyle = item.color;
+        ctx.lineWidth = item.thickness;
+        item.stroke.forEach(line => {
+          ctx.beginPath();
+          ctx.moveTo(line.fromX, line.fromY);
+          ctx.lineTo(line.toX, line.toY);
+          ctx.stroke();
+        });
+      });
+
+      ctx.lineWidth = traceThickness; // Reset to default thickness for new drawing
+
+      drawX(0, 0); // Top-left cell
+      drawX(mazeSize - 1, mazeSize - 1); // Bottom-right cell
+    }
+
+    function drawMaze() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#000000'; // Set the stroke color to black for the maze walls
+      ctx.lineWidth = wallThickness; // Set the wall thickness
+      for (let x = 0; x < mazeSize; x++) {
+        for (let y = 0; y < mazeSize; y++) {
+          const cell = maze[x][y];
+          const x1 = x * cellSize;
+          const y1 = y * cellSize;
+          const x2 = (x + 1) * cellSize;
+          const y2 = (y + 1) * cellSize;
+          if (cell.walls[0]) drawWall(x1, y1, x2, y1); // Top wall
+          if (cell.walls[1]) drawWall(x2, y1, x2, y2); // Right wall
+          if (cell.walls[2]) drawWall(x1, y2, x2, y2); // Bottom wall
+          if (cell.walls[3]) drawWall(x1, y1, x1, y2); // Left wall
+        }
+      }
+      // Reset the stroke color to the current color for further drawing after the maze is drawn
+      ctx.strokeStyle = currentColor;
+      ctx.lineWidth = traceThickness; // Reset to default thickness for new drawing
+    }
+    // Recursive backtracking algorithm
+    function generateMaze(currentCell) {
+      currentCell.visited = true;
+      const {
+        x,
+        y
+      } = currentCell;
+      // Randomly order the neighbors
+      const neighbors = [[1,0],
+        [0, 1],
+        [-1,0],
+        [0,-1]];
+      neighbors.sort(() => Math.random() - 0.5);
+      for (let [dx, dy] of neighbors) {
+        const newX = x + dx;
+        const newY = y + dy;
+
+        if (newX >= 0 && newY >= 0 && newX < mazeSize && newY < mazeSize && !maze[newX][newY].visited) {
+          // Remove the wall between the current cell and the chosen cell
+          currentCell.walls[(dx === 1 ? 1: (dx === -1 ? 3: (dy === 1 ? 2: 0)))] = false;
+          maze[newX][newY].walls[(dx === 1 ? 3: (dx === -1 ? 1: (dy === 1 ? 0: 2)))] = false;
+
+          // Continue with the new cell
+          generateMaze(maze[newX][newY]);
+        }
+      }
+      // Check if this is the initial call to generateMaze by checking the stack
+      if (stack.length === 0) {
+        // This means all recursive calls have finished
+        drawMaze(); // Draw the maze again to be sure
+        drawX(0, 0); // Draw X for the starting cell
+        drawX(mazeSize - 1, mazeSize - 1); // Draw X for the ending cell
+      }
+    }
+    function getTouchPos(canvasDom, touchEvent) {
+      var rect = canvasDom.getBoundingClientRect();
+      // Calculate the scaling factor
+      var scaleX = canvasDom.width / rect.width;
+      var scaleY = canvasDom.height / rect.height;
+      return {
+        x: (touchEvent.touches[0].clientX - rect.left) * scaleX,
+        y: (touchEvent.touches[0].clientY - rect.top) * scaleY
+      };
+    }
+    function drawColorCircle() {
+      colorCtx.fillStyle = currentColor;
+      colorCtx.beginPath();
+      colorCtx.arc(25,
+        25,
+        20,
+        0,
+        Math.PI * 2);
+      colorCtx.closePath();
+      colorCtx.fill();
+    }
+    // Function to initialize the maze based on the selected difficulty
+    function initializeMaze() {
+      mazeSize = parseInt(document.getElementById('difficultySelector').value); // Get the selected size
+      cellSize = canvas.width / mazeSize; // Update the cell size based on the new maze size
+
+      maze = []; // Reset the maze array
+      for (let x = 0; x < mazeSize; x++) {
+        maze[x] = [];
+        for (let y = 0; y < mazeSize; y++) {
+          maze[x][y] = {
+            x,
+            y,
+            walls: [true,
+              true,
+              true,
+              true],
+            // Top, right, bottom, left
+            visited: false
+          };
+        }
+      }
+
+      generateMaze(maze[0][0]); // Generate the maze
+      drawMaze(); // Draw the maze
+      drawX(0, 0); // Draw X for the starting cell
+      drawX(mazeSize - 1, mazeSize - 1); // Draw X for the ending cell
+    }
+
+    // ===== Event Handlers =====
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touchPos = getTouchPos(canvas, e);
+      isDrawing = true;
+      ctx.beginPath();
+      ctx.moveTo(touchPos.x, touchPos.y);
+      ctx.currentX = touchPos.x; // Set the current X
+      ctx.currentY = touchPos.y; // Set the current Y
+      drawnLines.push({
+        stroke: [], color: ctx.strokeStyle, thickness: ctx.lineWidth
+      }); // Start a new stroke
+
+    }, false);
+
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const touchPos = getTouchPos(canvas, e);
+      if (isDrawing) {
+        ctx.lineTo(touchPos.x, touchPos.y);
+        ctx.stroke();
+
+        // Retrieve the last stroke and add the new line to it
+        const currentStroke = drawnLines[drawnLines.length - 1];
+        currentStroke.stroke.push({
+          fromX: ctx.currentX,
+          fromY: ctx.currentY,
+          toX: touchPos.x,
+          toY: touchPos.y
+        });
+
+        ctx.currentX = touchPos.x;
+        ctx.currentY = touchPos.y;
+      }
+    }, false);
+    document.getElementById('difficultySelector').addEventListener('change', initializeMaze);
+
+    // bobo
+    document.getElementById('undoButton').addEventListener('click', () => {
+      drawnLines.pop(); // Remove the last stroke
+      redrawMazeAndLines();
+    });
+
+document.getElementById('clearButton').addEventListener('click', () => {
+  // Clear the history for the undo button
+  drawnLines = [];
+
+  // Set the color to black before redrawing the maze
+  ctx.strokeStyle = '#000000'; // Set the stroke color to black
+  ctx.lineWidth = wallThickness; // Reset to the default wall thickness
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawMaze(); // Redraw the maze after clearing
+
+  // Draw the green X's again after the maze is redrawn
+  drawX(0, 0); // Top-left cell
+  drawX(mazeSize - 1, mazeSize - 1); // Bottom-right cell
+
+  // Reset the stroke color to the current color for further drawing
+  ctx.strokeStyle = currentColor;
+  ctx.lineWidth = traceThickness; // Reset to the default wall thickness
+});
+
+    // Add event listener to the color circle canvas to open the color picker
+    colorPickerCanvas.addEventListener('click', () => {
+      document.getElementById('colorPicker').click();
+    });
+
+    // Update the current color when a new color is picked
+    document.getElementById('colorPicker').addEventListener('change', (e) => {
+      currentColor = e.target.value;
+      ctx.strokeStyle = currentColor; // Set the trace color to the chosen color
+      drawColorCircle();
+    });
+    // Button event listener for generating a new maze
+    document.getElementById('newMazeButton').addEventListener('click', () => {
+        drawnLines = [];
+      // Reset the maze data
+      for (let x = 0; x < mazeSize; x++) {
+        maze[x] = [];
+        for (let y = 0; y < mazeSize; y++) {
+          maze[x][y] = {
+            x,
+            y,
+            walls: [true,
+              true,
+              true,
+              true],
+            // Reset walls
+            visited: false // Reset visited cells
+          };
+        }
+      }
+
+      // Clear any existing trace
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Generate and draw a new maze
+      generateMaze(maze[0][0]);
+      drawMaze();
+      drawX(0, 0); // Draw X for the starting cell
+      drawX(mazeSize - 1, mazeSize - 1); // Draw X for the ending cell
+      ctx.lineWidth = traceThickness; // Reset to the default wall thickness
+
+    });
+
+  </script>
+</body>
+</html>

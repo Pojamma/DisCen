@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Minecraft Command Builder Deluxe</title>
+<style>
+  :root{
+    --bg:#1b261b;--panel:#263626;--panel2:#314831;--text:#f3ffe9;--muted:#bfd3b6;--accent:#81c784;--accent2:#ffd166;--danger:#ef767a;--input:#102010;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#132013,#314831);color:var(--text);min-height:100vh}
+  header{padding:22px 16px;text-align:center;background:#101a10;border-bottom:4px solid #5a7f45}
+  h1{margin:0;font-size:clamp(1.7rem,4vw,3rem);letter-spacing:.5px}.subtitle{color:var(--muted);margin-top:8px}
+  main{max-width:1180px;margin:0 auto;padding:18px}.card{background:rgba(38,54,38,.95);border:2px solid #5a7f45;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 8px 18px rgba(0,0,0,.35)}
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}.tab{border:0;border-radius:999px;padding:10px 14px;background:#3d583d;color:white;font-weight:bold;cursor:pointer}.tab.active{background:var(--accent);color:#102010}.tab:hover{filter:brightness(1.1)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.grid.wide{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  label{display:block;font-weight:bold;margin:6px 0;color:#eaffdf}.hint{font-size:.88rem;color:var(--muted);font-weight:normal;margin-top:4px;line-height:1.35}
+  input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #78966a;background:var(--input);color:var(--text);font-size:1rem}textarea{min-height:86px;font-family:Consolas,monospace;resize:vertical}.small{font-size:.9rem;color:var(--muted)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row > *{flex:1}.checkrow{display:flex;align-items:center;gap:8px;margin:8px 0}.checkrow input{width:auto;transform:scale(1.2)}
+  button.action{background:var(--accent2);border:0;color:#1b1b10;border-radius:12px;padding:12px 15px;font-weight:bold;cursor:pointer}button.action.secondary{background:#9ad0ff}button.action.danger{background:var(--danger);color:white}button.action:hover{filter:brightness(1.08)}
+  .preview{background:#071207;border:2px solid var(--accent);border-radius:14px;padding:12px}.preview textarea{font-size:1.05rem;min-height:120px}.section{display:none}.section.active{display:block}.pill{display:inline-block;background:#456945;padding:4px 8px;border-radius:999px;margin:3px;color:#eaffdf}.two{display:grid;grid-template-columns:1.3fr .7fr;gap:16px}@media(max-width:850px){.two{grid-template-columns:1fr}}
+  details{background:#203020;border-radius:12px;padding:10px;margin-top:10px}summary{cursor:pointer;font-weight:bold;color:#fff2ba}.outputList{font-family:Consolas,monospace;background:#071207;padding:10px;border-radius:10px;white-space:pre-wrap;line-height:1.35;max-height:240px;overflow:auto}
+</style>
+</head>
+<body>
+<header>
+  <h1>⛏️ Minecraft Command Builder Deluxe</h1>
+  <div class="subtitle">Build copy/paste commands with live preview. Works offline as one HTML file.</div>
+</header>
+<main>
+  <div class="card">
+    <div class="tabs" id="tabs"></div>
+    <div class="small">Tip: “Use current position” means Minecraft relative coordinates: <b>~ ~ ~</b>. Stand where you want the command to start, paste it, and Minecraft calculates from there.</div>
+  </div>
+
+  <div class="two">
+    <div>
+      <section id="fill" class="card section active"></section>
+      <section id="setblock" class="card section"></section>
+      <section id="clone" class="card section"></section>
+      <section id="tp" class="card section"></section>
+      <section id="summon" class="card section"></section>
+      <section id="give" class="card section"></section>
+      <section id="effect" class="card section"></section>
+      <section id="weather" class="card section"></section>
+      <section id="time" class="card section"></section>
+      <section id="gamemode" class="card section"></section>
+      <section id="help" class="card section"></section>
+    </div>
+    <aside class="card preview">
+      <h2>Generated Command</h2>
+      <textarea id="commandBox" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="action" onclick="copyCommand()">📋 Copy Command</button>
+        <button class="action secondary" onclick="build()">🔄 Rebuild</button>
+        <button class="action danger" onclick="document.getElementById('commandBox').value=''">Clear</button>
+      </div>
+      <p id="copyStatus" class="small"></p>
+      <details open>
+        <summary>Coordinate helper</summary>
+        <p class="small"><b>Absolute:</b> <code>-1 34 -23</code></p>
+        <p class="small"><b>Current position:</b> <code>~ ~ ~</code></p>
+        <p class="small"><b>Offset from current:</b> <code>~10 ~ ~-5</code></p>
+        <p class="small">For a 10×5×20 fill starting at current position, the end coordinate is <code>~9 ~4 ~19</code> because Minecraft includes both corners.</p>
+      </details>
+      <details>
+        <summary>Command history</summary>
+        <div id="history" class="outputList"></div>
+      </details>
+    </aside>
+  </div>
+</main>
+<script>
+const tabs = [
+  ['fill','/fill'],['setblock','/setblock'],['clone','/clone'],['tp','/tp'],['summon','/summon'],['give','/give'],['effect','/effect'],['weather','/weather'],['time','/time'],['gamemode','/gamemode'],['help','Help']
+];
+const blocks = [
+ ['minecraft:stone','Stone'],['minecraft:cobblestone','Cobblestone'],['minecraft:smooth_stone','Smooth Stone'],['minecraft:stone_bricks','Stone Bricks'],['minecraft:mossy_stone_bricks','Mossy Stone Bricks'],['minecraft:deepslate','Deepslate'],['minecraft:cobbled_deepslate','Cobbled Deepslate'],['minecraft:polished_deepslate','Polished Deepslate'],['minecraft:dirt','Dirt'],['minecraft:grass_block','Grass Block'],['minecraft:sand','Sand'],['minecraft:red_sand','Red Sand'],['minecraft:gravel','Gravel'],['minecraft:glass','Glass'],['minecraft:white_stained_glass','White Stained Glass'],['minecraft:black_stained_glass','Black Stained Glass'],['minecraft:oak_planks','Oak Planks'],['minecraft:spruce_planks','Spruce Planks'],['minecraft:birch_planks','Birch Planks'],['minecraft:jungle_planks','Jungle Planks'],['minecraft:acacia_planks','Acacia Planks'],['minecraft:dark_oak_planks','Dark Oak Planks'],['minecraft:mangrove_planks','Mangrove Planks'],['minecraft:cherry_planks','Cherry Planks'],['minecraft:bamboo_planks','Bamboo Planks'],['minecraft:bricks','Bricks'],['minecraft:quartz_block','Quartz Block'],['minecraft:smooth_quartz','Smooth Quartz'],['minecraft:quartz_pillar','Quartz Pillar'],['minecraft:nether_bricks','Nether Bricks'],['minecraft:red_nether_bricks','Red Nether Bricks'],['minecraft:end_stone','End Stone'],['minecraft:purpur_block','Purpur Block'],['minecraft:glowstone','Glowstone'],['minecraft:shroomlight','Shroomlight'],['minecraft:sea_lantern','Sea Lantern'],['minecraft:lantern','Lantern'],['minecraft:jack_o_lantern',"Jack o'Lantern"],['minecraft:torch','Torch'],['minecraft:obsidian','Obsidian'],['minecraft:crying_obsidian','Crying Obsidian'],['minecraft:water','Water'],['minecraft:lava','Lava'],['minecraft:air','Air']
+];
+const colors=['white','orange','magenta','light_blue','yellow','lime','pink','gray','light_gray','cyan','purple','blue','brown','green','red','black'];
+colors.forEach(c=>{blocks.push([`minecraft:${c}_concrete`,`${title(c)} Concrete`]);blocks.push([`minecraft:${c}_wool`,`${title(c)} Wool`]);});
+const items=[...blocks,['minecraft:diamond_sword','Diamond Sword'],['minecraft:diamond_pickaxe','Diamond Pickaxe'],['minecraft:netherite_pickaxe','Netherite Pickaxe'],['minecraft:bow','Bow'],['minecraft:arrow','Arrow'],['minecraft:elytra','Elytra'],['minecraft:torch','Torch'],['minecraft:bread','Bread'],['minecraft:golden_apple','Golden Apple'],['minecraft:ender_pearl','Ender Pearl'],['minecraft:water_bucket','Water Bucket'],['minecraft:lava_bucket','Lava Bucket']];
+const mobs=[['minecraft:zombie','Zombie'],['minecraft:skeleton','Skeleton'],['minecraft:creeper','Creeper'],['minecraft:spider','Spider'],['minecraft:villager','Villager'],['minecraft:iron_golem','Iron Golem'],['minecraft:wolf','Wolf'],['minecraft:cat','Cat'],['minecraft:horse','Horse'],['minecraft:cow','Cow'],['minecraft:pig','Pig'],['minecraft:sheep','Sheep'],['minecraft:chicken','Chicken'],['minecraft:allay','Allay'],['minecraft:ender_dragon','Ender Dragon'],['minecraft:wither','Wither']];
+const effects=[['minecraft:speed','Speed'],['minecraft:slowness','Slowness'],['minecraft:haste','Haste'],['minecraft:mining_fatigue','Mining Fatigue'],['minecraft:strength','Strength'],['minecraft:instant_health','Instant Health'],['minecraft:instant_damage','Instant Damage'],['minecraft:jump_boost','Jump Boost'],['minecraft:regeneration','Regeneration'],['minecraft:resistance','Resistance'],['minecraft:fire_resistance','Fire Resistance'],['minecraft:water_breathing','Water Breathing'],['minecraft:invisibility','Invisibility'],['minecraft:night_vision','Night Vision'],['minecraft:weakness','Weakness'],['minecraft:levitation','Levitation']];
+function title(s){return s.split('_').map(x=>x[0].toUpperCase()+x.slice(1)).join(' ')}
+function opts(list, selected=''){return list.map(([v,n])=>`<option value="${v}" ${v===selected?'selected':''}>${n} — ${v}</option>`).join('')}
+function field(id,label,value='',hint='',type='text'){return `<div><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${value}"><div class="hint">${hint}</div></div>`}
+function select(id,label,list,hint='',sel=''){return `<div><label for="${id}">${label}</label><select id="${id}">${opts(list,sel)}</select><div class="hint">${hint}</div></div>`}
+function check(id,label,checked=false){return `<label class="checkrow"><input id="${id}" type="checkbox" ${checked?'checked':''}> ${label}</label>`}
+function xyzFields(prefix){return `${field(prefix+'X','X','0')}${field(prefix+'Y','Y','64')}${field(prefix+'Z','Z','0')}`}
+function targetField(id='target'){return field(id,'Target selector / player','@p','@p nearest player, @a all players, @s yourself, or a player name')}
+function coord(prefix){return document.getElementById(prefix+'UseCurrent')?.checked ? ['~','~','~'] : [val(prefix+'X'),val(prefix+'Y'),val(prefix+'Z')];}
+function val(id){return document.getElementById(id)?.value.trim() || ''}
+function num(id,def=0){let n=parseInt(val(id),10);return Number.isFinite(n)?n:def}
+function relAdd(base, offset){ if(String(base).startsWith('~')) return offset===0?'~':`~${offset}`; return String(parseInt(base,10)+offset); }
+function addHistory(cmd){ if(!cmd)return; const h=document.getElementById('history'); const lines=h.textContent.split('\n').filter(Boolean); if(lines[0]!==cmd) lines.unshift(cmd); h.textContent=lines.slice(0,20).join('\n'); }
+function setCmd(cmd){document.getElementById('commandBox').value=cmd;addHistory(cmd)}
+function active(){return document.querySelector('.section.active').id}
+function initTabs(){document.getElementById('tabs').innerHTML=tabs.map(([id,name])=>`<button class="tab ${id==='fill'?'active':''}" onclick="switchTab('${id}')">${name}</button>`).join('')}
+function switchTab(id){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));[...document.querySelectorAll('.tab')].find(b=>b.textContent===tabs.find(t=>t[0]===id)[1]).classList.add('active');build()}
+function initSections(){
+ fill.innerHTML=`<h2>Detailed /fill Builder</h2><div class="grid wide"><div>${check('fillUseCurrent','Use current position as starting corner: ~ ~ ~',true)}<div class="grid">${xyzFields('fill')}</div></div><div class="grid">${field('fillW','Width X','10','Number of blocks along X')}${field('fillH','Height Y','5','Number of blocks upward')}${field('fillD','Depth Z','10','Number of blocks along Z')}</div>${select('fillBlock','Material / block',blocks,'Includes shroomlight and popular building blocks','minecraft:stone_bricks')}<div><label>Shape</label><select id="fillShape"><option value="solid">Solid box / cuboid</option><option value="hollow">Hollow box</option><option value="outline">Outline shell</option><option value="floor">Floor only / X-Z plane</option><option value="ceiling">Ceiling only</option><option value="wall_north">North wall only</option><option value="wall_south">South wall only</option><option value="wall_west">West wall only</option><option value="wall_east">East wall only</option><option value="xyplane">X-Y vertical plane</option><option value="yzplane">Y-Z vertical plane</option><option value="custom">Custom two corners</option></select><div class="hint">Hollow and outline use Minecraft fill modes. Planes calculate one thin layer.</div></div><div><label>Fill mode</label><select id="fillMode"><option value="replace">replace</option><option value="destroy">destroy</option><option value="keep">keep</option><option value="hollow">hollow</option><option value="outline">outline</option></select><div class="hint">For shape Hollow/Outline this is automatically adjusted unless you choose Custom.</div></div>${field('fillReplace','Replace only this block (optional)','','Example: minecraft:dirt. Only used with replace.')}${field('fillEndCustom','Custom end coordinate','','Example: 9 68 9 or ~9 ~4 ~9. Used only when Shape = Custom.')}</div><details open><summary>Calculated /fill notes</summary><p class="small">The end corner is start + size - 1. A 10-wide area starting at X=0 ends at X=9.</p><p class="small">Minecraft has limits on how many blocks one /fill can change. If your area is huge, split it into smaller commands.</p></details>`;
+ setblock.innerHTML=`<h2>/setblock Builder</h2><div class="grid">${check('setblockUseCurrent','Use current position: ~ ~ ~',true)}${xyzFields('setblock')}${select('setblockBlock','Block',blocks,'Block to place','minecraft:shroomlight')}<div><label>Mode</label><select id="setblockMode"><option value="replace">replace</option><option value="destroy">destroy</option><option value="keep">keep</option></select></div></div>`;
+ clone.innerHTML=`<h2>/clone Builder</h2><div class="grid">${field('cloneFrom1','From corner 1','0 64 0')}${field('cloneFrom2','From corner 2','9 68 9')}${field('cloneDest','Destination lower corner','20 64 0')}<div><label>Mask mode</label><select id="cloneMask"><option>replace</option><option>masked</option><option>filtered</option></select></div><div><label>Clone mode</label><select id="cloneMode"><option>normal</option><option>force</option><option>move</option></select></div>${field('cloneFilter','Filter block if filtered','','Example: minecraft:stone')}</div>`;
+ tp.innerHTML=`<h2>/tp Builder</h2><div class="grid">${targetField('tpTarget')}${check('tpUseCurrent','Teleport target to current command location: ~ ~ ~',false)}${xyzFields('tp')}${field('tpFacing','Facing / rotation optional','','Example: 90 0 or facing entity @p')}</div>`;
+ summon.innerHTML=`<h2>/summon Builder</h2><div class="grid">${select('summonMob','Mob / entity',mobs,'Popular summon choices','minecraft:villager')}${check('summonUseCurrent','Summon at current position: ~ ~ ~',true)}${xyzFields('summon')}${field('summonNbt','NBT / data optional','','Java examples only, like {CustomName:\'"Bob"\'}')}</div>`;
+ give.innerHTML=`<h2>/give Builder</h2><div class="grid">${targetField('giveTarget')}${select('giveItem','Item',items,'Popular items and blocks','minecraft:diamond_pickaxe')}${field('giveCount','Count','1','','number')}${field('giveData','Extra item data optional','','Edition/version dependent; leave blank if unsure')}</div>`;
+ effect.innerHTML=`<h2>/effect Builder</h2><div class="grid">${targetField('effectTarget')}${select('effectName','Effect',effects,'Popular status effects','minecraft:night_vision')}${field('effectSeconds','Seconds','60','','number')}${field('effectAmp','Amplifier','0','0 = level I, 1 = level II, etc.','number')}${check('effectHide','Hide particles',true)}</div>`;
+ weather.innerHTML=`<h2>/weather Builder</h2><div class="grid"><div><label>Weather</label><select id="weatherType"><option>clear</option><option>rain</option><option>thunder</option></select></div>${field('weatherSeconds','Duration seconds optional','300','','number')}</div>`;
+ time.innerHTML=`<h2>/time Builder</h2><div class="grid"><div><label>Action</label><select id="timeAction"><option value="set">set</option><option value="add">add</option><option value="query">query</option></select></div><div><label>Value</label><select id="timeValue"><option value="day">day</option><option value="night">night</option><option value="noon">noon</option><option value="midnight">midnight</option><option value="1000">1000</option><option value="6000">6000</option><option value="13000">13000</option><option value="18000">18000</option></select></div></div>`;
+ gamemode.innerHTML=`<h2>/gamemode Builder</h2><div class="grid"><div><label>Mode</label><select id="gmMode"><option>survival</option><option>creative</option><option>adventure</option><option>spectator</option></select></div>${targetField('gmTarget')}</div>`;
+ help.innerHTML=`<h2>Help / Cheat Sheet</h2><p>This app builds commands for common Minecraft tasks. You can edit the command box before copying.</p><div class="outputList">Selectors:\n@p = nearest player\n@a = all players\n@s = yourself\n@e = all entities\n\nRelative coordinates:\n~ ~ ~ = current position\n~10 ~0 ~-5 = 10 east/west, same height, 5 north/south from current position\n\nCommon /fill examples:\n/fill ~ ~ ~ ~9 ~4 ~9 minecraft:stone_bricks\n/fill ~ ~ ~ ~9 ~4 ~9 minecraft:glass outline\n/fill ~ ~ ~ ~9 ~4 ~9 minecraft:air replace minecraft:stone</div><details open><summary>Java vs Bedrock warning</summary><p class="small">Most commands here work in modern Minecraft, but exact syntax can differ between Java and Bedrock, especially item data, NBT, and some entity details. If a command fails, remove the optional extra data first.</p></details>`;
+ document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',build));
+}
+function buildFill(){let [x,y,z]=coord('fill');let w=Math.max(1,num('fillW',1)),h=Math.max(1,num('fillH',1)),d=Math.max(1,num('fillD',1));let shape=val('fillShape'), mode=val('fillMode');let x2=relAdd(x,w-1), y2=relAdd(y,h-1), z2=relAdd(z,d-1);if(shape==='custom' && val('fillEndCustom')){[x2,y2,z2]=val('fillEndCustom').split(/\s+/)}if(shape==='floor'){y2=y} if(shape==='ceiling'){y=relAdd(y,h-1);y2=y} if(shape==='wall_north'){z2=z} if(shape==='wall_south'){z=relAdd(z,d-1);z2=z} if(shape==='wall_west'){x2=x} if(shape==='wall_east'){x=relAdd(x,w-1);x2=x} if(shape==='xyplane'){z2=z} if(shape==='yzplane'){x2=x} if(shape==='hollow')mode='hollow'; if(shape==='outline')mode='outline';let cmd=`/fill ${x} ${y} ${z} ${x2} ${y2} ${z2} ${val('fillBlock')}`;let rep=val('fillReplace'); if(mode && mode!=='replace') cmd+=` ${mode}`; else if(rep) cmd+=` replace ${rep}`; return cmd;}
+function build(){let a=active(),cmd=''; if(a==='fill')cmd=buildFill(); if(a==='setblock'){let [x,y,z]=coord('setblock');cmd=`/setblock ${x} ${y} ${z} ${val('setblockBlock')} ${val('setblockMode')}`;} if(a==='clone'){cmd=`/clone ${val('cloneFrom1')} ${val('cloneFrom2')} ${val('cloneDest')} ${val('cloneMask')} ${val('cloneMode')}`; if(val('cloneMask')==='filtered'&&val('cloneFilter'))cmd+=` ${val('cloneFilter')}`;} if(a==='tp'){let [x,y,z]=coord('tp');cmd=`/tp ${val('tpTarget')} ${x} ${y} ${z}`+(val('tpFacing')?' '+val('tpFacing'):'');} if(a==='summon'){let [x,y,z]=coord('summon');cmd=`/summon ${val('summonMob')} ${x} ${y} ${z}`+(val('summonNbt')?' '+val('summonNbt'):'');} if(a==='give'){cmd=`/give ${val('giveTarget')} ${val('giveItem')} ${val('giveCount')}`+(val('giveData')?' '+val('giveData'):'');} if(a==='effect'){cmd=`/effect give ${val('effectTarget')} ${val('effectName')} ${val('effectSeconds')} ${val('effectAmp')} ${document.getElementById('effectHide').checked?'true':'false'}`;} if(a==='weather'){cmd=`/weather ${val('weatherType')}`+(val('weatherSeconds')?' '+val('weatherSeconds'):'');} if(a==='time'){cmd=`/time ${val('timeAction')} ${val('timeValue')}`;} if(a==='gamemode'){cmd=`/gamemode ${val('gmMode')} ${val('gmTarget')}`;} if(a!=='help')setCmd(cmd);}
+async function copyCommand(){const t=document.getElementById('commandBox').value;try{await navigator.clipboard.writeText(t);copyStatus.textContent='Copied!'}catch(e){document.getElementById('commandBox').select();document.execCommand('copy');copyStatus.textContent='Copied, or selected for manual copy.'}setTimeout(()=>copyStatus.textContent='',2200)}
+initTabs();initSections();build();
+</script>
+</body>
+</html>

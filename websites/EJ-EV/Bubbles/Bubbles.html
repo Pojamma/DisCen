@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--   Bob Robles 2023                -->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bubble Pop Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-image: url('background.jpg');
+      background-attachment: fixed;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      background-color: #ff77a9;
+      cursor: pointer;
+      user-select: none;
+      transition: top 0.5s ease-out;
+      /* Smooth transition for bubble movement */
+      animation-fill-mode: forwards;
+      /* Keep the state of the last frame of the animation */
+    }
+    #scoreBoard {
+      /*    position: absolute; */
+      top: 20px;
+      left: 20px;
+      font-size: 24px;
+      color: #ffffff;
+      z-index: 10;
+      background-color: rgba(0, 0, 0, 0.5);
+      /* Semi-transparent black background */
+      padding: 10px;
+      border-radius: 8px;
+      /* Optional: Adds rounded corners to the scoreboard */
+      font-weight: bold;
+      text-shadow: 2px 2px 4px #000000;
+      /* Optional: Text shadow for better readability */
+    }
+@keyframes pop {
+      from {
+        transform: scale(1);
+        opacity: 1;
+      }
+      to {
+        transform: scale(0);
+        opacity: 0;
+      }
+    }
+    h1 {
+      color: #ffffff;
+      text-align: center;
+      /* Center the h1 element */
+      width: 100%;
+      /* Ensure it takes full width of its container */
+    }
+
+  </style>
+</head>
+<body>
+  <h1><span id="userGreeting">Bubbles</span></h1> <!-- Title Header with background span -->
+  <div id="scoreBoard">
+    Popped: 0
+  </div>
+  <div id="encouragement" style="position: absolute; bottom: 20px; left: 20px; color: #ffffff; background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 8px; font-size: 20px; text-shadow: 2px 2px 4px #000000; z-index: 10;">
+  </div>
+  <script>
+    const scoreBoard = document.getElementById('scoreBoard');
+    let poppedCount = 0;
+    let bubbleSpeed = 15; // Initial speed of rising bubbles
+    let createBubbleInterval = 1500; // Initial interval for creating bubbles
+    let createBubbleTimer; // Holds the reference for the create bubble interval
+    const encouragement = document.getElementById('encouragement');
+    const synth = window.speechSynthesis; // Getting the speech synthesis interface
+    let userNickname = ''; // Add this at the beginning of your script
+
+    // Initial call to start creating bubbles
+    createBubbleTimer = setInterval(createBubble, createBubbleInterval);
+    displayUserName();
+
+
+    // =====  Functions =====
+
+
+    function getUserInfoFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        userName: params.get('user'),
+        nickname: params.get('nickname')
+      };
+    }
+
+    function displayUserName() {
+      const userInfo = getUserInfoFromURL();
+      if (userInfo.userName) {
+        document.getElementById('userGreeting').innerHTML = 'Hello ' + userInfo.nickname + '<br> Start Popping!';
+        userNickname = userInfo.nickname; // Store the nickname
+      }
+    }
+
+    function speak(text) {
+      if (synth.speaking) {
+        console.error('SpeechSynthesis is already speaking.');
+        return;
+      }
+      if (text !== '') {
+        const utterThis = new SpeechSynthesisUtterance(text);
+        synth.speak(utterThis);
+      }
+    }
+
+    function displayEncouragement() {
+      let message = '';
+      // Array of positive phrases for random encouragement
+      const randomEncouragements = [
+        "Good job",
+        "You keep getting better",
+        "Awesome sauce your the boss",
+        "Holy Hannahs bananas your good",
+        "You're doing great",
+        "Keep it up",
+        "You're the bee's knees",
+        "Way to go",
+        "If you were any cuter my head would pop",
+        "You're a star"
+      ];
+      // Randomly decide to show a random encouragement message
+      const showRandomEncouragement = Math.random() < 0.4; // 40% chance to show a random message
+
+      switch (poppedCount) {
+        case 1: message = "Good job!"; break;
+        case 5: message = "Hey, have you done this before?"; break;
+        case 10: message = "You're on a roll!"; break;
+        case 15: message = "Bubble popping master!"; break;
+        case 20: message = "Incredible!"; break;
+        case 25: message = "Unstoppable!"; break;
+        case 30: message = "Amazing skills!"; break;
+        case 40: message = "Bubble pop legend!"; break;
+        case 45: message = "You're making this look easy!"; break;
+        case 50: message = "Half a century of pops. because its 50. get it?!"; break;
+        case 55: message = "Bubblenator in action!"; break;
+        case 60: message = "Pop star!"; break;
+        case 65: message = "Bubble wizard!"; break;
+        case 70: message = "Bubble-popping frenzy!"; break;
+        case 75: message = "You're the bubble boss!"; break;
+        default:
+          if (showRandomEncouragement) {
+            if (Math.random() >= 0.5) {
+              message = randomEncouragements[Math.floor(Math.random() * randomEncouragements.length)];
+              message += `, ${userNickname}`; // Append the nickname after the encouragement
+            } else {
+              message = `${userNickname}, `; // Start with the nickname
+              message += randomEncouragements[Math.floor(Math.random() * randomEncouragements.length)];
+            }
+          } else {
+            return;
+          }
+        }
+        encouragement.textContent = message;
+        speak(message); // Speak the message
+        setTimeout(() => {
+          encouragement.textContent = '';
+        }, 2000); // Clear message after 2 seconds
+      }
+
+      function createBubble() {
+        const bubble = document.createElement('div');
+        bubble.classList.add('bubble');
+        const size = Math.random() * (80 - 40) + 40;
+        bubble.style.width = bubble.style.height = `${size}px`;
+        bubble.style.left = `${Math.random() * (window.innerWidth - size)}px`;
+        bubble.style.top = `${window.innerHeight}px`;
+        bubble.style.opacity = 0.7 + Math.random() * 0.3;
+
+        // Set random bubble color
+        bubble.style.backgroundColor = getRandomColor();
+
+        const popSound = new Audio('pop-94319.mp3');
+        popSound.preload = 'auto';
+
+        bubble.onclick = function() {
+          popSound.currentTime = 0; // Rewind to the start
+          popSound.play();
+          this.style.animation = 'pop 0.3s';
+          this.addEventListener('animationend', () => this.remove());
+          poppedCount++;
+          scoreBoard.textContent = `Popped: ${poppedCount}`;
+          increaseDifficulty();
+        };
+        document.body.appendChild(bubble);
+
+        moveBubble(bubble, size);
+      }
+
+      function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+          color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+      }
+
+      function moveBubble(bubble, size) {
+        let bubbleBottom = window.innerHeight;
+        let interval = setInterval(() => {
+          bubbleBottom -= 2; // This is the actual speed of the bubble's movement
+          bubble.style.top = `${bubbleBottom}px`;
+
+          if (bubbleBottom < -size) {
+            clearInterval(interval);
+            bubble.remove();
+          }
+        },
+          bubbleSpeed);
+      }
+
+      function increaseDifficulty() {
+        if (poppedCount % 10 === 0) {
+          bubbleSpeed = Math.max(bubbleSpeed - 1, 5); // Gradually increase the speed, but not less than 5
+
+          clearInterval(createBubbleTimer); // Clear the current bubble creating interval
+          createBubbleInterval = Math.max(createBubbleInterval - 100, 300); // Gradually decrease interval, but not less than 300ms
+          createBubbleTimer = setInterval(createBubble, createBubbleInterval); // Set the new interval
+        }
+        displayEncouragement(); // Call the encouragement function
+      }
+
+    </script>
+  </body>
+</html>

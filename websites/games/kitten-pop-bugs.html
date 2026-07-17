@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Kitten Pop Bugs</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: system-ui, Arial, sans-serif;
+    background: #111;
+    color: white;
+    touch-action: none;
+    user-select: none;
+  }
+
+  #setup {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: radial-gradient(circle at top, #333, #050505);
+  }
+
+  .panel {
+    width: min(92vw, 520px);
+    background: rgba(0,0,0,.65);
+    border: 2px solid rgba(255,255,255,.15);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.45);
+  }
+
+  h1 {
+    margin: 0 0 12px;
+    font-size: clamp(30px, 7vw, 52px);
+    text-align: center;
+  }
+
+  label {
+    display: block;
+    margin-top: 18px;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  input, select, button {
+    width: 100%;
+    margin-top: 8px;
+    padding: 16px;
+    border-radius: 16px;
+    border: 0;
+    font-size: 22px;
+  }
+
+  button {
+    margin-top: 26px;
+    background: #ffd84d;
+    color: #111;
+    font-weight: 900;
+  }
+
+  .hint {
+    opacity: .8;
+    text-align: center;
+    line-height: 1.35;
+    font-size: 16px;
+  }
+
+  #game {
+    display: none;
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #050505;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  #exitBtn {
+    position: fixed;
+    top: env(safe-area-inset-top, 10px);
+    right: 10px;
+    width: auto;
+    padding: 10px 14px;
+    font-size: 16px;
+    border-radius: 12px;
+    opacity: .18;
+    z-index: 5;
+  }
+
+  #exitBtn:active { opacity: .9; }
+</style>
+</head>
+<body>
+
+<section id="setup">
+  <div class="panel">
+    <h1>🐾 Kitten Pop Bugs</h1>
+    <p class="hint">Tap Start, then give the tablet to your kitten. Bugs pop, vibrate, and respawn.</p>
+
+    <label for="count">How many bugs / objects?</label>
+    <input id="count" type="number" min="1" max="30" value="8" />
+
+    <label for="speed">Speed</label>
+    <select id="speed">
+      <option value="slow">Slow</option>
+      <option value="medium" selected>Medium</option>
+      <option value="fast">Fast</option>
+    </select>
+
+    <label for="objectSize">Object size</label>
+    <select id="objectSize">
+      <option value="small">Small</option>
+      <option value="medium" selected>Medium</option>
+      <option value="large">Large</option>
+    </select>
+
+    <label for="catColors">Use cat colors?</label>
+    <select id="catColors">
+      <option value="yes" selected>Yes - blue / yellow</option>
+      <option value="no">No - colorful bugs</option>
+    </select>
+
+    <button id="startBtn">START FULL SCREEN</button>
+  </div>
+</section>
+
+<section id="game">
+  <canvas id="canvas"></canvas>
+  <button id="exitBtn">Exit</button>
+</section>
+
+<script>
+(() => {
+  const setup = document.getElementById("setup");
+  const game = document.getElementById("game");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const startBtn = document.getElementById("startBtn");
+  const exitBtn = document.getElementById("exitBtn");
+
+  let bugs = [];
+  let pops = [];
+  let running = false;
+  let catColors = true;
+  let lastTime = 0;
+  let audioCtx = null;
+
+  const sizeMap = {
+    small: [18, 34],
+    medium: [28, 58],
+    large: [50, 90]
+  };
+
+  const speedMap = {
+    slow: [35, 75],
+    medium: [70, 140],
+    fast: [130, 230]
+  };
+
+  const catPalette = ["#2f7cff", "#57c7ff", "#ffe45c", "#d9ff66"];
+  const funPalette = ["#ff4040", "#ff9f1c", "#7cff4f", "#b46cff", "#ff5edc", "#45f3ff"];
+
+  function rand(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+
+  function resize() {
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    canvas.width = Math.floor(innerWidth * dpr);
+    canvas.height = Math.floor(innerHeight * dpr);
+    canvas.style.width = innerWidth + "px";
+    canvas.style.height = innerHeight + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function makeBug(speedSetting) {
+    const sizeSetting = document.getElementById("objectSize").value;
+    const [minSize, maxSize] = sizeMap[sizeSetting] || sizeMap.medium;
+    const size = rand(minSize, maxSize);
+    const [minSpeed, maxSpeed] = speedMap[speedSetting];
+    const angle = rand(0, Math.PI * 2);
+    const speed = rand(minSpeed, maxSpeed);
+    const type = pick(["ladybug", "worm", "lizard"]);
+    const palette = catColors ? catPalette : funPalette;
+
+    return {
+      x: rand(size, innerWidth - size),
+      y: rand(size, innerHeight - size),
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size,
+      color: pick(palette),
+      accent: catColors ? pick(["#ffffff", "#111111", "#ffe45c"]) : pick(funPalette),
+      type,
+      wiggle: rand(0, 1000),
+      turnTimer: rand(.4, 2.0)
+    };
+  }
+
+  function spawnAll() {
+    const count = Math.max(1, Math.min(30, Number(document.getElementById("count").value) || 8));
+    const speedSetting = document.getElementById("speed").value;
+    catColors = document.getElementById("catColors").value === "yes";
+    bugs = Array.from({ length: count }, () => makeBug(speedSetting));
+  }
+
+  function respawn(index) {
+    bugs[index] = makeBug(document.getElementById("speed").value);
+  }
+
+  function drawLadybug(b) {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(Math.atan2(b.vy, b.vx));
+
+    ctx.fillStyle = b.color;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, b.size * .75, b.size * .55, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, -b.size * .5);
+    ctx.lineTo(0, b.size * .5);
+    ctx.stroke();
+
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.arc(b.size * .58, 0, b.size * .25, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = b.accent;
+    for (let i = -1; i <= 1; i += 2) {
+      ctx.beginPath(); ctx.arc(-b.size * .2, i * b.size * .22, b.size * .09, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(b.size * .18, i * b.size * .25, b.size * .08, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawWorm(b) {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(Math.atan2(b.vy, b.vx));
+    for (let i = 0; i < 6; i++) {
+      const wobble = Math.sin(b.wiggle + i) * b.size * .12;
+      ctx.fillStyle = i % 2 ? b.accent : b.color;
+      ctx.beginPath();
+      ctx.arc(-i * b.size * .22, wobble, b.size * .22, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.arc(b.size * .08, -b.size * .07, 3, 0, Math.PI * 2);
+    ctx.arc(b.size * .08, b.size * .07, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawLizard(b) {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(Math.atan2(b.vy, b.vx));
+
+    ctx.fillStyle = b.color;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, b.size * .8, b.size * .32, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(b.size * .72, 0, b.size * .28, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = b.color;
+    ctx.lineWidth = Math.max(5, b.size * .12);
+    ctx.beginPath();
+    ctx.moveTo(-b.size * .65, 0);
+    ctx.quadraticCurveTo(-b.size * 1.15, Math.sin(b.wiggle) * b.size * .35, -b.size * 1.55, 0);
+    ctx.stroke();
+
+    ctx.strokeStyle = b.accent;
+    ctx.lineWidth = 4;
+    for (const sx of [-.25, .25]) {
+      ctx.beginPath();
+      ctx.moveTo(sx * b.size, -b.size * .2);
+      ctx.lineTo((sx - .35) * b.size, -b.size * .55);
+      ctx.moveTo(sx * b.size, b.size * .2);
+      ctx.lineTo((sx - .35) * b.size, b.size * .55);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.arc(b.size * .82, -b.size * .08, 3, 0, Math.PI * 2);
+    ctx.arc(b.size * .82, b.size * .08, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawBug(b) {
+    if (b.type === "ladybug") drawLadybug(b);
+    else if (b.type === "worm") drawWorm(b);
+    else drawLizard(b);
+  }
+
+  function playPopSound() {
+    // Web Audio lets us create a tiny pop sound without needing an audio file.
+    // It must start after the user taps Start, which unlocks audio on most tablets.
+    if (!audioCtx) return;
+
+    const now = audioCtx.currentTime;
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(520, now);
+    osc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.28, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.10);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.11);
+
+    // A second tiny click makes it sound more like “pop pop”.
+    const click = audioCtx.createOscillator();
+    const clickGain = audioCtx.createGain();
+
+    click.type = "square";
+    click.frequency.setValueAtTime(900, now + 0.07);
+    clickGain.gain.setValueAtTime(0.0001, now + 0.07);
+    clickGain.gain.exponentialRampToValueAtTime(0.12, now + 0.075);
+    clickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
+
+    click.connect(clickGain);
+    clickGain.connect(audioCtx.destination);
+
+    click.start(now + 0.07);
+    click.stop(now + 0.14);
+  }
+
+  function popAt(x, y, color) {
+    pops.push({ x, y, color, life: 0, max: .35 });
+  }
+
+  function drawPops(dt) {
+    pops = pops.filter(p => {
+      p.life += dt;
+      const t = p.life / p.max;
+      if (t >= 1) return false;
+
+      ctx.save();
+      ctx.globalAlpha = 1 - t;
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 15 + t * 60, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.font = `${Math.floor(24 + t * 28)}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.fillStyle = p.color;
+      ctx.fillText("POP!", p.x, p.y - 10 - t * 20);
+      ctx.restore();
+
+      return true;
+    });
+  }
+
+  function update(dt) {
+    const speedSetting = document.getElementById("speed").value;
+    const [minSpeed, maxSpeed] = speedMap[speedSetting];
+
+    for (const b of bugs) {
+      b.wiggle += dt * 10;
+      b.turnTimer -= dt;
+
+      if (b.turnTimer <= 0) {
+        const angle = Math.atan2(b.vy, b.vx) + rand(-.9, .9);
+        const speed = rand(minSpeed, maxSpeed);
+        b.vx = Math.cos(angle) * speed;
+        b.vy = Math.sin(angle) * speed;
+        b.turnTimer = rand(.4, 2.2);
+      }
+
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+
+      if (b.x < b.size || b.x > innerWidth - b.size) b.vx *= -1;
+      if (b.y < b.size || b.y > innerHeight - b.size) b.vy *= -1;
+
+      b.x = Math.max(b.size, Math.min(innerWidth - b.size, b.x));
+      b.y = Math.max(b.size, Math.min(innerHeight - b.size, b.y));
+    }
+  }
+
+  function drawBackground() {
+    ctx.fillStyle = catColors ? "#020711" : "#080808";
+    ctx.fillRect(0, 0, innerWidth, innerHeight);
+
+    // A few dim stars/dots make moving bugs easier to notice.
+    ctx.globalAlpha = .12;
+    ctx.fillStyle = "#ffffff";
+    for (let i = 0; i < 30; i++) {
+      const x = (i * 97) % innerWidth;
+      const y = (i * 53) % innerHeight;
+      ctx.beginPath();
+      ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function loop(time) {
+    if (!running) return;
+    const dt = Math.min(.033, (time - lastTime) / 1000 || .016);
+    lastTime = time;
+
+    update(dt);
+    drawBackground();
+    for (const b of bugs) drawBug(b);
+    drawPops(dt);
+
+    requestAnimationFrame(loop);
+  }
+
+  function handleTap(clientX, clientY) {
+    for (let i = bugs.length - 1; i >= 0; i--) {
+      const b = bugs[i];
+      const dx = clientX - b.x;
+      const dy = clientY - b.y;
+      const hitRadius = b.size * 1.15;
+
+      if (dx * dx + dy * dy <= hitRadius * hitRadius) {
+        popAt(b.x, b.y, b.color);
+
+        playPopSound();
+
+        if (navigator.vibrate) {
+          navigator.vibrate([35, 20, 35]);
+        }
+
+        respawn(i);
+        break;
+      }
+    }
+  }
+
+  canvas.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    handleTap(e.clientX, e.clientY);
+  }, { passive: false });
+
+  startBtn.addEventListener("click", async () => {
+    setup.style.display = "none";
+    game.style.display = "block";
+    resize();
+    spawnAll();
+
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") await audioCtx.resume();
+    } catch (_) {
+      audioCtx = null;
+    }
+
+    running = true;
+    lastTime = performance.now();
+
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (_) {
+      // Some mobile browsers only allow partial fullscreen. The app still fills the screen.
+    }
+
+    requestAnimationFrame(loop);
+  });
+
+  exitBtn.addEventListener("click", async () => {
+    running = false;
+    game.style.display = "none";
+    setup.style.display = "grid";
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+    } catch (_) {}
+  });
+
+  window.addEventListener("resize", resize);
+})();
+</script>
+</body>
+</html>

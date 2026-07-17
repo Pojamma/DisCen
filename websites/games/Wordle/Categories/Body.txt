@@ -1,0 +1,17 @@
+arms
+ears
+fingers
+head
+skin
+back
+eye
+foot
+heart
+body
+face
+hair
+legs
+chest
+feet
+hand
+mouth

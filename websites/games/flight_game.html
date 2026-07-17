@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sky Adventure Flight Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #87CEEB 0%, #98D8E8 50%, #B0E0E6 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 50%, #87CEEB 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            padding: 20px;
+            position: relative;
+        }
+
+        canvas {
+            border: 3px solid #4169E1;
+            border-radius: 15px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 50%, #98FB98 100%);
+            display: block;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 10px;
+            width: 180px;
+            height: 180px;
+        }
+
+        .control-btn {
+            background: linear-gradient(145deg, #4169E1, #1E90FF);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(145deg, #1E90FF, #4169E1);
+        }
+
+        .up { grid-column: 2; grid-row: 1; }
+        .left { grid-column: 1; grid-row: 2; }
+        .right { grid-column: 3; grid-row: 2; }
+        .down { grid-column: 2; grid-row: 3; }
+
+        .ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #2F4F4F;
+            font-weight: bold;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .restart-btn {
+            background: linear-gradient(145deg, #32CD32, #228B22);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.2s;
+        }
+
+        .restart-btn:hover {
+            background: linear-gradient(145deg, #228B22, #32CD32);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div class="ui">
+            <div>Score: <span id="score">0</span></div>
+            <div>Lives: <span id="lives">3</span></div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn up">↑</button>
+            <button class="control-btn left">←</button>
+            <button class="control-btn right">→</button>
+            <button class="control-btn down">↓</button>
+        </div>
+
+        <div class="game-over" id="gameOver">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <button class="restart-btn" onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let game = {
+            score: 0,
+            lives: 3,
+            running: true,
+            backgroundX: 0
+        };
+
+        // Player
+        let player = {
+            x: 100,
+            y: canvas.height / 2,
+            width: 60,
+            height: 30,
+            speed: 5
+        };
+
+        // Game objects
+        let clouds = [];
+        let stars = [];
+        let particles = [];
+
+        // Input handling
+        let keys = {
+            up: false,
+            down: false,
+            left: false,
+            right: false
+        };
+
+        // Control button event listeners
+        document.querySelector('.up').addEventListener('mousedown', () => keys.up = true);
+        document.querySelector('.up').addEventListener('mouseup', () => keys.up = false);
+        document.querySelector('.up').addEventListener('touchstart', (e) => { e.preventDefault(); keys.up = true; });
+        document.querySelector('.up').addEventListener('touchend', (e) => { e.preventDefault(); keys.up = false; });
+
+        document.querySelector('.down').addEventListener('mousedown', () => keys.down = true);
+        document.querySelector('.down').addEventListener('mouseup', () => keys.down = false);
+        document.querySelector('.down').addEventListener('touchstart', (e) => { e.preventDefault(); keys.down = true; });
+        document.querySelector('.down').addEventListener('touchend', (e) => { e.preventDefault(); keys.down = false; });
+
+        document.querySelector('.left').addEventListener('mousedown', () => keys.left = true);
+        document.querySelector('.left').addEventListener('mouseup', () => keys.left = false);
+        document.querySelector('.left').addEventListener('touchstart', (e) => { e.preventDefault(); keys.left = true; });
+        document.querySelector('.left').addEventListener('touchend', (e) => { e.preventDefault(); keys.left = false; });
+
+        document.querySelector('.right').addEventListener('mousedown', () => keys.right = true);
+        document.querySelector('.right').addEventListener('mouseup', () => keys.right = false);
+        document.querySelector('.right').addEventListener('touchstart', (e) => { e.preventDefault(); keys.right = true; });
+        document.querySelector('.right').addEventListener('touchend', (e) => { e.preventDefault(); keys.right = false; });
+
+        // Keyboard controls as backup
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowUp': keys.up = true; break;
+                case 'ArrowDown': keys.down = true; break;
+                case 'ArrowLeft': keys.left = true; break;
+                case 'ArrowRight': keys.right = true; break;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            switch(e.key) {
+                case 'ArrowUp': keys.up = false; break;
+                case 'ArrowDown': keys.down = false; break;
+                case 'ArrowLeft': keys.left = false; break;
+                case 'ArrowRight': keys.right = false; break;
+            }
+        });
+
+        // Create initial clouds and stars
+        function init() {
+            clouds = [];
+            stars = [];
+            particles = [];
+            
+            // Create some initial clouds
+            for (let i = 0; i < 5; i++) {
+                clouds.push({
+                    x: canvas.width + Math.random() * 500,
+                    y: Math.random() * (canvas.height - 100),
+                    width: 80 + Math.random() * 40,
+                    height: 40 + Math.random() * 20,
+                    speed: 1 + Math.random() * 2
+                });
+            }
+
+            // Create some initial stars
+            for (let i = 0; i < 3; i++) {
+                stars.push({
+                    x: canvas.width + Math.random() * 300,
+                    y: Math.random() * canvas.height,
+                    size: 15,
+                    speed: 2 + Math.random(),
+                    collected: false
+                });
+            }
+        }
+
+        // Draw airplane
+        function drawPlayer() {
+            ctx.save();
+            ctx.translate(player.x + player.width/2, player.y + player.height/2);
+            
+            // Airplane body
+            ctx.fillStyle = '#FF6347';
+            ctx.fillRect(-25, -5, 50, 10);
+            
+            // Wings
+            ctx.fillStyle = '#4169E1';
+            ctx.fillRect(-15, -15, 30, 8);
+            ctx.fillRect(-15, 7, 30, 8);
+            
+            // Nose
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.moveTo(25, 0);
+            ctx.lineTo(15, -8);
+            ctx.lineTo(15, 8);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Propeller
+            ctx.strokeStyle = '#696969';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(25, 0, 12, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        // Draw cloud
+        function drawCloud(cloud) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath();
+            ctx.arc(cloud.x, cloud.y, cloud.width/4, 0, Math.PI * 2);
+            ctx.arc(cloud.x + cloud.width/3, cloud.y, cloud.width/3, 0, Math.PI * 2);
+            ctx.arc(cloud.x + cloud.width*2/3, cloud.y, cloud.width/4, 0, Math.PI * 2);
+            ctx.arc(cloud.x + cloud.width/6, cloud.y - cloud.height/3, cloud.width/5, 0, Math.PI * 2);
+            ctx.arc(cloud.x + cloud.width/2, cloud.y - cloud.height/3, cloud.width/4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Draw star
+        function drawStar(star) {
+            ctx.fillStyle = '#FFD700';
+            ctx.strokeStyle = '#FFA500';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < 5; i++) {
+                const angle = (i * Math.PI * 2) / 5 - Math.PI / 2;
+                const x = star.x + Math.cos(angle) * star.size;
+                const y = star.y + Math.sin(angle) * star.size;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+                
+                const innerAngle = ((i + 0.5) * Math.PI * 2) / 5 - Math.PI / 2;
+                const innerX = star.x + Math.cos(innerAngle) * (star.size * 0.5);
+                const innerY = star.y + Math.sin(innerAngle) * (star.size * 0.5);
+                ctx.lineTo(innerX, innerY);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // Draw particle effect
+        function drawParticle(particle) {
+            ctx.fillStyle = `rgba(255, 215, 0, ${particle.alpha})`;
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Update game objects
+        function update() {
+            if (!game.running) return;
+
+            // Move player
+            if (keys.up && player.y > 0) player.y -= player.speed;
+            if (keys.down && player.y < canvas.height - player.height) player.y += player.speed;
+            if (keys.left && player.x > 0) player.x -= player.speed;
+            if (keys.right && player.x < canvas.width - player.width) player.x += player.speed;
+
+            // Update background
+            game.backgroundX -= 2;
+
+            // Update clouds
+            clouds.forEach((cloud, index) => {
+                cloud.x -= cloud.speed;
+                
+                // Remove clouds that are off-screen and add new ones
+                if (cloud.x + cloud.width < 0) {
+                    clouds.splice(index, 1);
+                    clouds.push({
+                        x: canvas.width + Math.random() * 200,
+                        y: Math.random() * (canvas.height - 100),
+                        width: 80 + Math.random() * 40,
+                        height: 40 + Math.random() * 20,
+                        speed: 1 + Math.random() * 2
+                    });
+                }
+
+                // Collision detection with clouds
+                if (player.x < cloud.x + cloud.width &&
+                    player.x + player.width > cloud.x &&
+                    player.y < cloud.y + cloud.height/2 &&
+                    player.y + player.height > cloud.y - cloud.height/2) {
+                    
+                    // Hit a cloud
+                    game.lives--;
+                    player.x = 100; // Reset position
+                    player.y = canvas.height / 2;
+                    
+                    if (game.lives <= 0) {
+                        gameOver();
+                    }
+                }
+            });
+
+            // Update stars
+            stars.forEach((star, index) => {
+                star.x -= star.speed;
+                
+                // Remove stars that are off-screen and add new ones
+                if (star.x + star.size < 0) {
+                    stars.splice(index, 1);
+                    stars.push({
+                        x: canvas.width + Math.random() * 200,
+                        y: Math.random() * canvas.height,
+                        size: 15,
+                        speed: 2 + Math.random(),
+                        collected: false
+                    });
+                }
+
+                // Collision detection with stars
+                if (!star.collected &&
+                    player.x < star.x + star.size &&
+                    player.x + player.width > star.x - star.size &&
+                    player.y < star.y + star.size &&
+                    player.y + player.height > star.y - star.size) {
+                    
+                    // Collected a star
+                    star.collected = true;
+                    game.score += 10;
+                    
+                    // Create particle effect
+                    for (let i = 0; i < 8; i++) {
+                        particles.push({
+                            x: star.x,
+                            y: star.y,
+                            vx: (Math.random() - 0.5) * 6,
+                            vy: (Math.random() - 0.5) * 6,
+                            size: Math.random() * 4 + 2,
+                            alpha: 1,
+                            decay: 0.02
+                        });
+                    }
+                    
+                    stars.splice(index, 1);
+                    stars.push({
+                        x: canvas.width + Math.random() * 200,
+                        y: Math.random() * canvas.height,
+                        size: 15,
+                        speed: 2 + Math.random(),
+                        collected: false
+                    });
+                }
+            });
+
+            // Update particles
+            particles.forEach((particle, index) => {
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.alpha -= particle.decay;
+                particle.size *= 0.98;
+                
+                if (particle.alpha <= 0) {
+                    particles.splice(index, 1);
+                }
+            });
+
+            // Update UI
+            document.getElementById('score').textContent = game.score;
+            document.getElementById('lives').textContent = game.lives;
+        }
+
+        // Render game
+        function render() {
+            // Clear canvas with gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(0.5, '#E0F6FF');
+            gradient.addColorStop(1, '#98FB98');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw moving background clouds
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            for (let i = 0; i < 3; i++) {
+                let x = (game.backgroundX * 0.5 + i * 300) % (canvas.width + 100) - 100;
+                ctx.beginPath();
+                ctx.arc(x, 100 + i * 150, 30, 0, Math.PI * 2);
+                ctx.arc(x + 20, 100 + i * 150, 40, 0, Math.PI * 2);
+                ctx.arc(x + 40, 100 + i * 150, 30, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw game objects
+            clouds.forEach(drawCloud);
+            stars.forEach(drawStar);
+            particles.forEach(drawParticle);
+            drawPlayer();
+        }
+
+        // Game over
+        function gameOver() {
+            game.running = false;
+            document.getElementById('finalScore').textContent = game.score;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        // Restart game
+        function restartGame() {
+            game.score = 0;
+            game.lives = 3;
+            game.running = true;
+            game.backgroundX = 0;
+            player.x = 100;
+            player.y = canvas.height / 2;
+            document.getElementById('gameOver').style.display = 'none';
+            init();
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start game
+        init();
+        gameLoop();
+    </script>
+</body>
+</html>

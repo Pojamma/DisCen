@@ -1,0 +1,16 @@
+control
+king
+power
+state
+country
+law
+president
+tax
+decide
+nation
+represent
+voice
+government
+order
+right
+vote

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Frequency Counter</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        .options {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .copy-btn {
+            background-color: #27ae60;
+            margin-left: 10px;
+        }
+        
+        .copy-btn:hover {
+            background-color: #219653;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            cursor: pointer;
+        }
+        
+        th:hover {
+            background-color: #e6e6e6;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .missing {
+            color: red;
+            font-weight: bold;
+        }
+        
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        label {
+            margin-right: 15px;
+            font-weight: 500;
+        }
+        
+        input[type="radio"] {
+            margin-right: 5px;
+        }
+        
+        .results-container {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .summary {
+            margin-top: 15px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Letter Frequency Counter</h1>
+        
+        <div>
+            <label for="inputText">Paste your text here:</label>
+            <textarea id="inputText" placeholder="Enter the text to analyze..."></textarea>
+        </div>
+        
+        <div class="options">
+            <label>
+                <input type="radio" name="countOption" value="alphabet" checked> 
+                Count alphabet letters only
+            </label>
+            <label>
+                <input type="radio" name="countOption" value="all"> 
+                Count all characters
+            </label>
+        </div>
+        
+        <button id="analyzeBtn" class="btn">Analyze Text</button>
+        <button id="copyBtn" class="btn copy-btn">Copy Results</button>
+        
+        <div id="message" class="message" style="display: none;"></div>
+        
+        <div id="summary" class="summary"></div>
+        
+        <div class="results-container">
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th id="charHeader">Character</th>
+                        <th id="freqHeader">Frequency</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputText = document.getElementById('inputText');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const resultsBody = document.getElementById('resultsBody');
+            const charHeader = document.getElementById('charHeader');
+            const freqHeader = document.getElementById('freqHeader');
+            const messageDiv = document.getElementById('message');
+            const summaryDiv = document.getElementById('summary');
+            
+            let sortDirection = 'asc';
+            let sortColumn = 'char';
+            
+            // Analyze text when button is clicked
+            analyzeBtn.addEventListener('click', analyzeText);
+            
+            // Add event listeners for sorting
+            charHeader.addEventListener('click', () => sortTable('char'));
+            freqHeader.addEventListener('click', () => sortTable('freq'));
+            
+            // Copy results to clipboard
+            copyBtn.addEventListener('click', copyResults);
+            
+            function analyzeText() {
+                const text = inputText.value;
+                const countOption = document.querySelector('input[name="countOption"]:checked').value;
+                
+                if (!text.trim()) {
+                    showMessage('Please enter some text to analyze.', false);
+                    return;
+                }
+                
+                let charCount = {};
+                let totalChars = 0;
+                
+                // Count characters
+                if (countOption === 'alphabet') {
+                    // Initialize all alphabet letters with zero count
+                    for (let i = 97; i <= 122; i++) {
+                        charCount[String.fromCharCode(i)] = 0;
+                    }
+                    
+                    // Count only alphabet letters
+                    for (let char of text.toLowerCase()) {
+                        if (/[a-z]/.test(char)) {
+                            charCount[char]++;
+                            totalChars++;
+                        }
+                    }
+                } else {
+                    // Count all characters
+                    for (let char of text) {
+                        if (!charCount[char]) {
+                            charCount[char] = 0;
+                        }
+                        charCount[char]++;
+                        totalChars++;
+                    }
+                }
+                
+                // Convert to array for sorting
+                let charArray = Object.entries(charCount).map(([char, freq]) => ({
+                    char,
+                    freq,
+                    isMissing: freq === 0
+                }));
+                
+                // Sort initially by character
+                sortTableData(charArray, 'char', 'asc');
+                
+                // Display the results
+                displayResults(charArray, totalChars);
+                
+                showMessage('Text analyzed successfully!', true);
+            }
+            
+            function displayResults(charArray, totalChars) {
+                resultsBody.innerHTML = '';
+                
+                charArray.forEach(item => {
+                    const row = document.createElement('tr');
+                    
+                    const charCell = document.createElement('td');
+                    charCell.textContent = item.char === ' ' ? '(space)' : item.char;
+                    if (item.isMissing) {
+                        charCell.classList.add('missing');
+                    }
+                    
+                    const freqCell = document.createElement('td');
+                    freqCell.textContent = item.freq;
+                    
+                    row.appendChild(charCell);
+                    row.appendChild(freqCell);
+                    resultsBody.appendChild(row);
+                });
+                
+                // Display summary
+                const uniqueChars = charArray.filter(item => item.freq > 0).length;
+                const missingLetters = charArray.filter(item => item.isMissing).length;
+                
+                let summaryText = `Total characters: ${totalChars}, Unique characters: ${uniqueChars}`;
+                
+                const countOption = document.querySelector('input[name="countOption"]:checked').value;
+                if (countOption === 'alphabet' && missingLetters > 0) {
+                    summaryText += `, Missing letters: ${missingLetters} (shown in red)`;
+                }
+                
+                summaryDiv.textContent = summaryText;
+            }
+            
+            function sortTable(column) {
+                // Toggle sort direction if clicking the same column
+                if (sortColumn === column) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColumn = column;
+                    sortDirection = 'asc';
+                }
+                
+                // Visual indication of sort column and direction
+                charHeader.textContent = 'Character' + (sortColumn === 'char' ? (sortDirection === 'asc' ? ' ↑' : ' ↓') : '');
+                freqHeader.textContent = 'Frequency' + (sortColumn === 'freq' ? (sortDirection === 'asc' ? ' ↑' : ' ↓') : '');
+                
+                // Get current data and re-sort
+                const rows = Array.from(resultsBody.querySelectorAll('tr'));
+                const charArray = rows.map(row => {
+                    const cells = row.querySelectorAll('td');
+                    const char = cells[0].textContent === '(space)' ? ' ' : cells[0].textContent;
+                    return {
+                        char,
+                        freq: parseInt(cells[1].textContent),
+                        isMissing: cells[0].classList.contains('missing')
+                    };
+                });
+                
+                // Sort and redisplay
+                sortTableData(charArray, sortColumn, sortDirection);
+                displayResults(charArray, charArray.reduce((sum, item) => sum + item.freq, 0));
+            }
+            
+            function sortTableData(data, column, direction) {
+                data.sort((a, b) => {
+                    let compareA = column === 'char' ? a.char : a.freq;
+                    let compareB = column === 'char' ? b.char : b.freq;
+                    
+                    // Handle special case for character sorting
+                    if (column === 'char') {
+                        return direction === 'asc' ? 
+                            compareA.localeCompare(compareB) : 
+                            compareB.localeCompare(compareA);
+                    } else {
+                        return direction === 'asc' ? 
+                            compareA - compareB : 
+                            compareB - compareA;
+                    }
+                });
+            }
+            
+            function copyResults() {
+                // Create a string representation of the table
+                const rows = Array.from(resultsBody.querySelectorAll('tr'));
+                let tableText = 'Character\tFrequency\n';
+                
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    tableText += `${cells[0].textContent}\t${cells[1].textContent}\n`;
+                });
+                
+                // Add summary
+                tableText += `\n${summaryDiv.textContent}`;
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(tableText)
+                    .then(() => {
+                        showMessage('Results copied to clipboard!', true);
+                    })
+                    .catch(err => {
+                        showMessage('Failed to copy results: ' + err, false);
+                    });
+            }
+            
+            function showMessage(text, isSuccess) {
+                messageDiv.textContent = text;
+                messageDiv.className = 'message ' + (isSuccess ? 'success' : '');
+                messageDiv.style.backgroundColor = isSuccess ? '#d4edda' : '#f8d7da';
+                messageDiv.style.color = isSuccess ? '#155724' : '#721c24';
+                messageDiv.style.display = 'block';
+                
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>

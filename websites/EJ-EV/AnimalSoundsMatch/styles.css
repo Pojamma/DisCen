@@ -1,0 +1,127 @@
+/* styles.css */
+body, html {
+    /* height: 100%; */
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    /* display: flex; */
+    justify-content: center;
+    align-items: center;
+
+    background-image: url("background.jpg");
+    background-size:auto;
+    background-position: bottom , center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-color: #141461; /* Dark blue background */
+    }
+}
+
+.game-container {
+    width: 80%;
+    max-width: 600px;
+    text-align: center;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+h1 {
+    color: #333;
+    text-align: center;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 columns */
+    gap: 10px;
+    margin-top: 20px;
+}
+.grid div {
+    cursor: pointer;
+    height: 200px; /* Adjust this value based on your desired card size */
+    background-color: #141461; /* Lavender background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    font-size: 20px;
+    color: #333;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.2s; /* Smooth transform on click */
+    background-size: cover; /* Ensures image covers the whole card */
+    background-position: center; /* Centers the background image */
+}
+
+.grid div {
+    cursor: pointer;
+    height: 200px; /* Fixed height for each card */
+    width: 150px; /* Fixed height for each card */
+    background-color: #28d58a; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    font-size: 20px;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.2s; /* Smooth transform on click */
+}
+
+.grid div:active {
+    transform: scale(0.9); /* Interactive feedback when card is clicked */
+}
+
+.overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10; /* Ensure it's above other content */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%; /* Cover the full screen width */
+    height: 100%; /* Cover the full screen height */
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+}
+
+.overlay img {
+    max-width: 60%; /* Maximum width of the image */
+    max-height: 60%; /* Maximum height of the image */
+    width: auto;
+    height: auto;
+}
+
+#reset-button {
+    background-color: #ff6347; /* Tomato red */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin-top: 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+#reset-sound-button {
+    background-color: #47ffbf;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin-top: 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+#reset-button:hover {
+    background-color: #e53e30; /* Darker shade when hovered */
+}
+#reset-sound-button:hover {
+    background-color: #e53e30; /* Darker shade when hovered */
+}

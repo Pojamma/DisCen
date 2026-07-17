@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--   Bob Robles 2023                -->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Schoolbell&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <title>Alphabet Tracing App</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      /* Prevents horizontal scrolling at the body level */
+      background-color: #A7D8DE;
+      /* Light blue background for a kid-friendly feel */
+      background-image: url('background.jpg');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center top;
+      background-attachment: fixed;
+    }
+    #userGreeting {
+      background-color: rgba(100%, 100%, 87.8%, 0.8);
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-family: 'Schoolbell', cursive;
+      text-align: center;
+      width: 100%;
+    }
+    canvas {
+      /* Set a solid background color with full opacity */
+      background-color: rgba(255, 255, 255, 1);
+      /* Adjust the last number between 0 (fully transparent) and 1 (fully opaque) as needed */
+    }
+    #tracingCanvas {
+      margin-top: 20px;
+      cursor: crosshair;
+      border: 5px solid #FFA07A;
+      /* A softer border color */
+      background-color: rgba(255, 248, 220, 1);
+      /* Soft pastel color with opacity */
+    }
+    .controls {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+    button {
+      flex: 1;
+      /* Grow each button to take equal space */
+      min-width: 50px;
+      /* Optional: ensure buttons have a minimum width */
+      box-sizing: border-box;
+      /* Include padding and border in the element's total width and height */
+      background-color: #FFD700;
+      color: black;
+      padding: 8px 5px;
+      margin: 0 2px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 20px;
+      border: 2px solid brown;
+    }
+    button:hover {
+      background-color: #FFC222;
+    }
+    #colorPicker {
+      height: 30px;
+      width: 30px;
+      border-radius: 50%;
+      border: 2px solid #000;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+    #alphabetContainer {
+      background-color: #f8f8f8;
+      /* Light grey background for contrast */
+      border: 1px solid #ddd;
+      /* Add a subtle border */
+      border-radius: 5px;
+      /* Optional: round the corners */
+      margin-top: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+      /* Optional: adds a subtle shadow for depth */
+      max-width: 100%;
+      /* Ensures the container doesn't exceed the width of the screen */
+      overflow-x: auto;
+      /* Enables horizontal scrolling if the content is too wide */
+      white-space: nowrap;
+      /* Keeps the alphabet in a single line */
+      box-sizing: border-box;
+      /* Includes padding and border in the element's total width */
+      display: flex;
+      /* Enables flexbox */
+      align-items: center;
+      /* Vertically centers the content */
+      justify-content: center;
+      /* Horizontally centers the content */
+      height: 50px;
+      /* Set a fixed height or min-height as needed */
+      padding: 0 5px;
+      /* Adjusted padding for the content */
+      padding-left: 180px;
+    }
+
+    .active-letter {
+      color: #FF6347;
+      /* Highlight color */
+      font-weight: bold;
+      text-shadow: 0px 0px 2px #000;
+      /* Text shadow for better legibility */
+    }
+
+    /* Additional style to improve readability of individual characters */
+    #alphabetContainer span {
+      padding: 0 5px;
+      user-select: none;
+      /* Prevents text from being selectable, optional */
+    }
+    h1 {
+      text-align: center;
+      /* Center the h1 element */
+      width: 100%;
+      /* Ensure it takes full width of its container */
+    }
+    #toggleModeButton.on {
+      background-color: green;
+      /* Color when toggled on */
+      color: white;
+    }
+
+    #toggleModeButton.off {
+      background-color: blue;
+      /* Color when toggled off */
+      color: white;
+    }
+    .break-after {
+      flex-basis: 100%;
+      height: 0;
+    }
+
+  </style>
+</head>
+<body>
+  <h1><span id="userGreeting">Letter Tracer</span></h1> <!-- Title Header with background span -->
+  <div class="controls">
+    <button id="nextButton"><i class="fas fa-chevron-right"></i></button>
+    <button id="clearDrawingButton"><i class="fas fa-trash"></i></button>
+    <button id="undoButton"><i class="fa fa-undo"></i></button>
+    <button id="speakButton"><i class="fas fa-volume-up"></i></button>
+    <button id="randomButton"><i class="fas fa-random"></i></button>
+    <!-- Invisible break element -->
+    <div class="break-after"></div>
+    <div id="colorPicker"></div>
+    <input type="color" id="colorChooser" hidden />
+    <!-- Add a hidden input for color picking -->
+    <button id="toggleFontStyleButton"><i class="fas fa-font"></i></button>
+    <button id="toggleModeButton">ABC123</button>
+  </div>
+  <div id="alphabetContainer" width="380"></div>
+  <canvas id="tracingCanvas" width="380" height="380"></canvas>
+
+  <script>
+    const canvas = document.getElementById('tracingCanvas');
+    const ctx = canvas.getContext('2d');
+    // Set drawing parameters
+    ctx.lineWidth = 10; // Makes the line thicker
+    ctx.strokeStyle = '#FF6347'; // Tomato color for the line
+    ctx.lineCap = 'round'; // Round end caps for the line
+
+    let drawing = false;
+    let currentLetter = '';
+    let mode = 'letters'; // Default to letters mode
+    let hasShownSpeechSupportMessage = false;
+    let isCursive = false;
+    let currentLetterIndex = -1;
+    let currentNumber = 0;
+    let canvasStates = [];
+    const maxStates = 10; // Limit the number of states stored to avoid memory issues
+    let initialState = null;
+
+    // Initialize the color picker circle with the current color
+    updateTraceColor('#FF6347');
+    selectNewLetterOrNumber();
+    toggleFontStyle();
+    toggleFontStyle();
+    // Initiate by drawing a letter or number
+    drawLetterOrNumber();
+    updateAlphabetContainer();
+    displayUserName();
+
+    // ===== Functions =====
+
+    function speakText(text) {
+      if (!window.speechSynthesis) {
+        console.log("Speech synthesis not supported in this browser");
+        return;
+      }
+
+      // Create a new speech synthesis utterance
+      var utterance = new SpeechSynthesisUtterance(text);
+
+      // Speak the utterance
+      window.speechSynthesis.speak(utterance);
+    }
+
+
+    function getUserInfoFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        userName: params.get('user'),
+        nickname: params.get('nickname')
+      };
+    }
+
+    function displayUserName() {
+      const userInfo = getUserInfoFromURL();
+      if (userInfo.userName) {
+        //document.getElementById('userGreeting').innerHTML = 'Hello ' + userInfo.userName + ' (' + userInfo.nickname + ')<br> Welcome to the Trace game!';
+        document.getElementById('userGreeting').innerHTML = 'Hello ' + userInfo.nickname + '<br> Welcome to the Trace game!';
+      }
+    }
+
+    function saveCanvasState() {
+      if (canvasStates.length >= maxStates) canvasStates.shift(); // Remove the oldest state if limit is reached
+      canvasStates.push(canvas.toDataURL()); // Save the current canvas state
+    }
+    function undoLastAction() {
+      if (canvasStates.length === 0) {
+        if (initialState) {
+          let img = new Image();
+          img.onload = function() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0); // Redraw the initial state
+          };
+          img.src = initialState;
+        }
+        updateAlphabetContainer();
+        return;
+      }
+
+      canvasStates.pop();
+      let lastState = canvasStates.length > 0 ? canvasStates[canvasStates.length - 1]: initialState;
+      let img = new Image();
+      img.onload = function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+      };
+      img.src = lastState;
+      updateAlphabetContainer();
+    }
+
+    function updateAlphabetContainer() {
+      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const numbers = '0123456789';
+      let containerHtml = '';
+      const current = mode === 'letters' ? alphabet: numbers;
+
+      for (let char of current) {
+        const isActive = (mode === 'letters' && currentLetter.includes(char)) || (mode === 'numbers' && currentLetter === char);
+        containerHtml += `<span class="${isActive ? 'active-letter': ''}" data-char="${char}">${char}</span>`;
+      }
+
+      document.getElementById('alphabetContainer').innerHTML = containerHtml;
+      // Add click event listeners to each character
+      document.querySelectorAll('#alphabetContainer span').forEach((span, index) => {
+        span.addEventListener('click', function() {
+          currentLetter = this.getAttribute('data-char');
+          currentLetterIndex = index; // Update the index of the current letter
+
+          if (mode === 'letters') {
+            currentLetter += currentLetter.toLowerCase();
+          }
+
+          drawLetterOrNumber();
+          updateAlphabetContainer(); // Update to highlight the new active letter
+        });
+      });
+
+    }
+
+
+
+
+    function selectLetterOrNumber() {
+      if (mode === 'letters') {
+        //currentLetterIndex = (currentLetterIndex + 1) % 26; // Increment and wrap around
+        let upperCaseLetter = String.fromCharCode(65 + currentLetterIndex);
+        let lowerCaseLetter = upperCaseLetter.toLowerCase();
+        currentLetter = upperCaseLetter + lowerCaseLetter;
+      } else {
+        //currentNumber = (currentNumber + 1) % 10; // Increment and wrap around
+        currentLetter = currentNumber.toString();
+      }
+      updateAlphabetContainer();
+    }
+
+    function selectNewLetterOrNumber() {
+      if (mode === 'letters') {
+        currentLetterIndex = (currentLetterIndex + 1) % 26; // Increment and wrap around
+        let upperCaseLetter = String.fromCharCode(65 + currentLetterIndex);
+        let lowerCaseLetter = upperCaseLetter.toLowerCase();
+        currentLetter = upperCaseLetter + lowerCaseLetter;
+      } else {
+        currentNumber = (currentNumber + 1) % 10; // Increment and wrap around
+        currentLetter = currentNumber.toString();
+      }
+      updateAlphabetContainer();
+    }
+
+
+    function selectRandomLetterOrNumber() {
+      if (mode === 'letters') {
+        let randomIndex = Math.floor(Math.random() * 26);
+        let upperCaseLetter = String.fromCharCode(65 + randomIndex);
+        let lowerCaseLetter = upperCaseLetter.toLowerCase();
+        currentLetter = upperCaseLetter + lowerCaseLetter;
+        currentLetterIndex = randomIndex + 0;
+      } else {
+        currentNumber = Math.floor(Math.random() * 10).toString();
+        currentLetter = currentNumber; //currentLetter = currentNumber.toString();
+
+      }
+      updateAlphabetContainer();
+      drawLetterOrNumber(); // Redraw with the new random letter or number
+    }
+
+
+
+
+
+
+    function toggleMode() {
+      mode = mode === 'letters' ? 'numbers': 'letters';
+      const toggleButton = document.getElementById('toggleModeButton');
+      if (mode === 'letters') {
+        toggleButton.classList.remove('off');
+        toggleButton.classList.add('on');
+      } else {
+        toggleButton.classList.remove('on');
+        toggleButton.classList.add('off');
+      }
+      selectLetterOrNumber(); // You need to select a new letter or number when switching modes
+      drawLetterOrNumber();
+      updateAlphabetContainer();
+    }
+
+    function drawLetterOrNumber() {
+      // Clear the canvas before drawing the new letter or number
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = isCursive ? '220px Dancing Script': '220px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle'; // Adjust vertical alignment
+      ctx.fillStyle = '#7FFFD4';
+
+      // Calculate the positions for letters or numbers
+      let xPosition = canvas.width / 2;
+      let yPosition = canvas.height / 2;
+
+      // Draw the current letter or number centered on the canvas
+      if (mode === 'letters') {
+        // Adjust x positions to account for multiple characters if needed
+        let spacing = 80; // Increase this value to add more space
+        let firstCharXPos = xPosition - spacing; // Move the first character (uppercase) to the left
+        let secondCharXPos = xPosition + spacing; // Move the second character (lowercase) to the right
+
+        // Draw both the uppercase and lowercase letter
+        ctx.fillText(currentLetter[0], firstCharXPos, yPosition);
+        ctx.fillText(currentLetter[1], secondCharXPos, yPosition);
+      } else {
+        // Draw the number centered on the canvas
+        ctx.fillText(currentLetter, xPosition, yPosition);
+      }
+      initialState = canvas.toDataURL(); // Save the state after drawing the letter or number
+
+    }
+    function toggleFontStyle() {
+      isCursive = !isCursive;
+      document.getElementById('toggleFontStyleButton').textContent = isCursive ? 'Cursive': 'Print';
+      drawLetterOrNumber(); // Redraw the letter or number with the new font style
+    }
+    function stopDrawing() {
+      drawing = false;
+      ctx.beginPath();
+    }
+    // Gets the correct position of a touch or mouse event
+    function getPosition(event) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return {
+        x: (event.clientX - rect.left) * scaleX,
+        y: (event.clientY - rect.top) * scaleY
+      };
+    }
+    function speakLetter(letter) {
+      let firstLetter = letter.charAt(0); // This will get the first letter
+      if ('speechSynthesis' in window) {
+        let utterance = new SpeechSynthesisUtterance(firstLetter);
+        utterance.lang = 'en-US';
+        window.speechSynthesis.speak(utterance);
+      } else if (!hasShownSpeechSupportMessage) {
+        alert("Sorry, your browser doesn't support text speech.");
+        hasShownSpeechSupportMessage = true; // Set the flag so the message won't show again
+      }
+    }
+
+    function clearDrawing() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawLetterOrNumber();
+    }
+    function startDrawing(pos) {
+      if (!drawing) {
+        saveCanvasState(); // Save state only when the user starts a new stroke
+      }
+      drawing = true;
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+    function draw(pos) {
+      if (!drawing) return;
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+    function updateTraceColor(newColor) {
+      ctx.strokeStyle = newColor;
+      document.getElementById('colorPicker').style.backgroundColor = newColor;
+    }
+    // Converts touch event coordinates to canvas coordinates
+    function getTouchPos(canvasDom, touchEvent) {
+      const rect = canvasDom.getBoundingClientRect();
+      const scaleX = canvasDom.width / rect.width;
+      const scaleY = canvasDom.height / rect.height;
+      return {
+        x: (touchEvent.touches[0].clientX - rect.left) * scaleX,
+        y: (touchEvent.touches[0].clientY - rect.top) * scaleY
+      };
+    }
+    // ===== Event listeners =====
+
+    canvas.addEventListener('mousedown', (e) => startDrawing(getPosition(e)));
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mousemove', (e) => {
+      if (drawing) {
+        draw(getPosition(e));
+      }
+    });
+    canvas.addEventListener('touchstart', function(e) {
+      const touch = e.touches[0];
+      const mouseEvent = new MouseEvent('mousedown', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+      });
+      canvas.dispatchEvent(mouseEvent);
+    }, false);
+    canvas.addEventListener('touchmove', function(e) {
+      e.preventDefault(); // This prevents the default scrolling behavior on touch move
+      const touch = e.touches[0];
+      const mouseEvent = new MouseEvent('mousemove', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+      });
+      canvas.dispatchEvent(mouseEvent);
+    }, false);
+    canvas.addEventListener('touchend', function(e) {
+      const mouseEvent = new MouseEvent('mouseup', {});
+      canvas.dispatchEvent(mouseEvent);
+    }, false);
+    document.addEventListener('DOMContentLoaded', function() {
+      toggleMode(); // This will set the initial state of the toggle button
+      toggleMode(); // do it twice for ABC to show
+    });
+    document.getElementById('colorPicker').addEventListener('click', function() {
+      document.getElementById('colorChooser').click();
+    });
+    document.getElementById('colorChooser').addEventListener('change', function(e) {
+      updateTraceColor(e.target.value);
+    });
+    // bobo
+    document.getElementById('nextButton').addEventListener('click', function() {
+      selectNewLetterOrNumber();
+      drawLetterOrNumber();
+    });
+    document.getElementById('clearDrawingButton').addEventListener('click', clearDrawing);
+    document.getElementById('undoButton').addEventListener('click', undoLastAction);
+    document.getElementById('toggleModeButton').addEventListener('click', toggleMode); // This should call toggleMode
+    document.getElementById('speakButton').addEventListener('click', function() {
+      speakLetter(currentLetter);
+    });
+    document.getElementById('toggleFontStyleButton').addEventListener('click', toggleFontStyle);
+    document.getElementById('randomButton').addEventListener('click', function() {
+      selectRandomLetterOrNumber();
+    });
+
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+  <script>
+    eruda.init();
+  </script>
+</body>
+</html>

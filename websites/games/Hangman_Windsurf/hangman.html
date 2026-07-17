@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman Game</title>
+    <link rel="stylesheet" href="hangman.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1>Hangman</h1>
+        <div class="game-area">
+            <div class="hangman-container">
+                <svg class="gallows-svg" viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Gallows structure -->
+                    <line x1="50" y1="380" x2="200" y2="380" stroke="#8b4513" stroke-width="10"/>
+                    <line x1="125" y1="380" x2="125" y2="80" stroke="#8b4513" stroke-width="10"/>
+                    <line x1="125" y1="80" x2="220" y2="80" stroke="#8b4513" stroke-width="10"/>
+                    <line x1="220" y1="80" x2="220" y2="120" stroke="#333" stroke-width="2"/>
+                    
+                    <!-- Hangman figure (with transform-origin for swinging) -->
+                    <g class="hangman-figure">
+                        <!-- Head -->
+                        <circle class="head" cx="220" cy="140" r="25" fill="none" stroke="#000" stroke-width="3"/>
+                        
+                        <!-- Body -->
+                        <line class="body" x1="220" y1="165" x2="220" y2="240" stroke="#000" stroke-width="3"/>
+                        
+                        <!-- Left arm -->
+                        <line class="arm-left" x1="220" y1="185" x2="180" y2="170" stroke="#000" stroke-width="3"/>
+                        
+                        <!-- Right arm -->
+                        <line class="arm-right" x1="220" y1="185" x2="260" y2="170" stroke="#000" stroke-width="3"/>
+                        
+                        <!-- Left leg -->
+                        <line class="leg-left" x1="220" y1="240" x2="195" y2="290" stroke="#000" stroke-width="3"/>
+                        
+                        <!-- Right leg -->
+                        <line class="leg-right" x1="220" y1="240" x2="245" y2="290" stroke="#000" stroke-width="3"/>
+                    </g>
+                </svg>
+            </div>
+            <div class="game-info">
+                <div class="word-display"></div>
+                <div class="incorrect-guesses">
+                    <p>Incorrect Guesses: <span id="wrong-guesses">0/6</span></p>
+                    <p>Guessed Letters: <span id="guessed-letters"></span></p>
+                </div>
+                <div class="keyboard">
+                    <!-- Letters will be added by JavaScript -->
+                </div>
+                <button id="new-game" class="new-game-btn">New Game</button>
+            </div>
+        </div>
+    </div>
+    <script src="hangman.js"></script>
+</body>
+</html>

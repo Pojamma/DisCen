@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProBiz Server</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 40px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 { 
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .welcome-text {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .projects { 
+            margin-top: 30px;
+        }
+        .projects h3 {
+            color: #444;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .project-link { 
+            display: block;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; 
+            text-decoration: none; 
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        .project-link:hover { 
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .game-link {
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%) !important;
+        }
+        .server-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 30px;
+            border-left: 4px solid #667eea;
+        }
+        .server-info small {
+            color: #666;
+        }
+        .emoji {
+            font-size: 1.2em;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Welcome to ProBiz Server!</h1>
+        <p class="welcome-text">Your personal development playground is ready for action.</p>
+        
+        <div class="projects">
+            <h3>🎮 Games & Fun</h3>
+            <div class="project-grid">
+                <a href="/games/kids_drawing_pad.html" class="project-link game-link">
+                    <span class="emoji">🎨</span>Kids Drawing Pad
+                </a>
+                <a href="/games/" class="project-link game-link">
+                    <span class="emoji">🎯</span>More Games
+                </a>
+            </div>
+
+            <h3>💼 Projects</h3>
+            <div class="project-grid">
+                <a href="/projects/" class="project-link">
+                    <span class="emoji">📁</span>View Projects
+                </a>
+                <a href="/nodejs/" class="project-link">
+                    <span class="emoji">⚡</span>Node.js Apps
+                </a>
+                <a href="/docs/" class="project-link">
+                    <span class="emoji">📚</span>Documentation
+                </a>
+            </div>
+        </div>
+
+        <div class="server-info">
+            <h4>🖥️ Server Information</h4>
+            <small>
+                <strong>Server:</strong> Oracle Linux 9.6<br>
+                <strong>IP:</strong> 144.24.7.55<br>
+                <strong>Status:</strong> <span style="color: green;">●</span> Online and Ready
+            </small>
+        </div>
+    </div>
+
+    <script>
+        // Add some basic interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('ProBiz Server loaded successfully! 🚀');
+            
+            // Add click tracking for project links
+            const projectLinks = document.querySelectorAll('.project-link');
+            projectLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    console.log('Navigating to:', this.href);
+                });
+            });
+
+            // Add a subtle animation to project cards
+            projectLinks.forEach((link, index) => {
+                link.style.animationDelay = `${index * 0.1}s`;
+                link.style.animation = 'fadeInUp 0.6s ease forwards';
+            });
+        });
+
+        // Add CSS animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            .project-link {
+                opacity: 0;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

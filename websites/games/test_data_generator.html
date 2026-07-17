@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Test Data Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: flex;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: #f8f9fa;
+            padding: 30px;
+            border-right: 1px solid #e9ecef;
+            overflow-y: auto;
+        }
+
+        .content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+
+        .btn.success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .template-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .template-card:hover {
+            border-color: #667eea;
+            background: #e3f2fd;
+        }
+
+        .template-card.selected {
+            border-color: #667eea;
+            background: #e3f2fd;
+        }
+
+        .template-card h4 {
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .template-card p {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .field-builder {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #dee2e6;
+        }
+
+        .field-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .field-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .progress-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            transition: width 0.3s ease;
+        }
+
+        .preview-area {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border-left-color: #28a745;
+        }
+
+        .alert.warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left-color: #ffc107;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+            }
+            
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Advanced Test Data Generator</h1>
+            <p>Generate massive datasets with complex structures for testing and development</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="section">
+                    <h3>📊 Generation Settings</h3>
+                    
+                    <div class="form-group">
+                        <label for="outputFormat">Output Format</label>
+                        <select id="outputFormat">
+                            <option value="json">JSON</option>
+                            <option value="csv">CSV</option>
+                            <option value="text">Text Lines</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="recordCount">Number of Records</label>
+                        <input type="number" id="recordCount" value="1000" min="1" max="1000000">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="batchSize">Batch Size</label>
+                        <input type="number" id="batchSize" value="1000" min="100" max="10000">
+                        <small style="color: #6c757d;">Processing records in batches prevents browser freeze</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fileName">File Name</label>
+                        <input type="text" id="fileName" value="test_data" placeholder="Enter filename">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>⚙️ Advanced Options</h3>
+                    
+                    <div class="form-group">
+                        <label>JSON Options</label>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="prettyPrint" checked>
+                                <label for="prettyPrint">Pretty Print</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="includeNulls">
+                                <label for="includeNulls">Include Nulls</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>CSV Options</label>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="includeHeaders" checked>
+                                <label for="includeHeaders">Include Headers</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="quoteStrings" checked>
+                                <label for="quoteStrings">Quote Strings</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="csvDelimiter">CSV Delimiter</label>
+                        <select id="csvDelimiter">
+                            <option value=",">Comma (,)</option>
+                            <option value=";">Semicolon (;)</option>
+                            <option value="\t">Tab</option>
+                            <option value="|">Pipe (|)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>🎯 Quick Actions</h3>
+                    <button class="btn" onclick="generatePreview()">👁️ Preview Data</button>
+                    <button class="btn success" onclick="generateAndDownload()">📥 Generate & Download</button>
+                    <button class="btn secondary" onclick="clearAll()">🗑️ Clear All</button>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('templates')">📋 Templates</button>
+                    <button class="tab" onclick="switchTab('custom')">🛠️ Custom Fields</button>
+                    <button class="tab" onclick="switchTab('paste')">📄 Paste Template</button>
+                    <button class="tab" onclick="switchTab('preview')">👁️ Preview</button>
+                </div>
+
+                <div id="templates" class="tab-content active">
+                    <h3>📋 Choose a Template</h3>
+                    <div class="template-grid" id="templateGrid">
+                        <!-- Templates will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div id="custom" class="tab-content">
+                    <h3>🛠️ Custom Field Builder</h3>
+                    <button class="btn" onclick="addCustomField()">➕ Add Field</button>
+                    <div id="customFields"></div>
+                </div>
+
+                <div id="paste" class="tab-content">
+                    <h3>📄 Paste Your Template Object</h3>
+                    <p style="color: #6c757d; margin-bottom: 20px;">
+                        Paste a sample JSON object below and we'll automatically analyze its structure to generate similar data. 
+                        Supports nested objects, arrays, and all data types!
+                    </p>
+                    
+                    <div class="form-group">
+                        <label for="templateInput">Sample JSON Object</label>
+                        <textarea id="templateInput" 
+                                  placeholder='Paste your JSON here, for example:
+{
+  "id": 1,
+  "name": "John Doe",
+  "email": "john@example.com",
+  "age": 30,
+  "isActive": true,
+  "tags": ["developer", "javascript"],
+  "address": {
+    "street": "123 Main St",
+    "city": "New York",
+    "zipCode": "10001"
+  },
+  "createdAt": "2024-01-15T10:30:00.000Z"
+}'
+                                  rows="15"
+                                  style="font-family: 'Courier New', monospace; font-size: 13px;"
+                                  oninput="debounceParseTemplate()"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button class="btn" onclick="parseTemplate()">🔍 Analyze Template</button>
+                        <button class="btn secondary" onclick="clearTemplate()">🗑️ Clear</button>
+                    </div>
+                    
+                    <div id="templateAnalysis" style="display: none;">
+                        <div class="alert success">
+                            ✅ Template analyzed successfully! Found <span id="analyzedFieldCount">0</span> fields.
+                        </div>
+                        <div class="section">
+                            <h3>📊 Detected Field Structure</h3>
+                            <div id="detectedFields" class="preview-area" style="max-height: 300px; background: #f8f9fa; color: #495057;"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="templateError" class="alert warning" style="display: none;">
+                        ⚠️ <span id="errorMessage">Invalid JSON format. Please check your input.</span>
+                    </div>
+                </div>
+
+                <div id="preview" class="tab-content">
+                    <div class="stats" id="stats" style="display: none;">
+                        <div class="stat-card">
+                            <div class="stat-value" id="statRecords">0</div>
+                            <div class="stat-label">Records</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statFields">0</div>
+                            <div class="stat-label">Fields</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statSize">0 KB</div>
+                            <div class="stat-label">Est. Size</div>
+                        </div>
+                    </div>
+
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-bar" id="progressBar">0%</div>
+                    </div>
+
+                    <div class="alert success" id="successAlert" style="display: none;">
+                        ✅ Data generated successfully! Ready for download.
+                    </div>
+
+                    <h3>👁️ Data Preview</h3>
+                    <div class="preview-area" id="previewArea">
+                        Select a template, paste a sample object, or create custom fields to see preview...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Template definitions
+        const templates = {
+            user: {
+                name: "👤 User Profile",
+                description: "Basic user information with personal details",
+                fields: {
+                    id: { type: "number", min: 1, max: 999999 },
+                    firstName: { type: "firstName" },
+                    lastName: { type: "lastName" },
+                    email: { type: "email" },
+                    age: { type: "number", min: 18, max: 80 },
+                    phone: { type: "phone" },
+                    isActive: { type: "boolean" },
+                    createdAt: { type: "date" }
+                }
+            },
+            ecommerce: {
+                name: "🛒 E-commerce Product",
+                description: "Product catalog with pricing and inventory",
+                fields: {
+                    productId: { type: "uuid" },
+                    name: { type: "productName" },
+                    category: { type: "choice", options: ["Electronics", "Clothing", "Books", "Home", "Sports"] },
+                    price: { type: "number", min: 9.99, max: 999.99, decimals: 2 },
+                    inStock: { type: "boolean" },
+                    quantity: { type: "number", min: 0, max: 1000 },
+                    rating: { type: "number", min: 1, max: 5, decimals: 1 },
+                    tags: { type: "array", itemType: "word", length: 3 },
+                    description: { type: "sentence" }
+                }
+            },
+            financial: {
+                name: "💰 Financial Transaction",
+                description: "Banking and financial transaction data",
+                fields: {
+                    transactionId: { type: "uuid" },
+                    accountNumber: { type: "number", min: 1000000000, max: 9999999999 },
+                    amount: { type: "number", min: -10000, max: 10000, decimals: 2 },
+                    currency: { type: "choice", options: ["USD", "EUR", "GBP", "JPY", "CAD"] },
+                    type: { type: "choice", options: ["debit", "credit", "transfer", "payment"] },
+                    merchant: { type: "companyName" },
+                    timestamp: { type: "datetime" },
+                    balance: { type: "number", min: 0, max: 100000, decimals: 2 }
+                }
+            },
+            iot: {
+                name: "📡 IoT Sensor Data",
+                description: "Internet of Things sensor readings",
+                fields: {
+                    deviceId: { type: "string", pattern: "SENSOR-{number}" },
+                    location: { type: "object", properties: {
+                        latitude: { type: "number", min: -90, max: 90, decimals: 6 },
+                        longitude: { type: "number", min: -180, max: 180, decimals: 6 }
+                    }},
+                    readings: { type: "object", properties: {
+                        temperature: { type: "number", min: -40, max: 80, decimals: 1 },
+                        humidity: { type: "number", min: 0, max: 100, decimals: 1 },
+                        pressure: { type: "number", min: 950, max: 1050, decimals: 2 }
+                    }},
+                    battery: { type: "number", min: 0, max: 100 },
+                    timestamp: { type: "datetime" },
+                    status: { type: "choice", options: ["online", "offline", "maintenance"] }
+                }
+            },
+            social: {
+                name: "📱 Social Media Post",
+                description: "Social media posts with engagement metrics",
+                fields: {
+                    postId: { type: "uuid" },
+                    userId: { type: "number", min: 1, max: 1000000 },
+                    username: { type: "username" },
+                    content: { type: "paragraph" },
+                    hashtags: { type: "array", itemType: "hashtag", length: 5 },
+                    likes: { type: "number", min: 0, max: 10000 },
+                    shares: { type: "number", min: 0, max: 1000 },
+                    comments: { type: "number", min: 0, max: 500 },
+                    timestamp: { type: "datetime" },
+                    platform: { type: "choice", options: ["twitter", "instagram", "facebook", "linkedin"] }
+                }
+            },
+            logistics: {
+                name: "🚚 Shipping & Logistics",
+                description: "Package delivery and tracking information",
+                fields: {
+                    trackingNumber: { type: "string", pattern: "TRK{number}{number}{number}" },
+                    origin: { type: "city" },
+                    destination: { type: "city" },
+                    weight: { type: "number", min: 0.1, max: 50, decimals: 2 },
+                    dimensions: { type: "object", properties: {
+                        length: { type: "number", min: 1, max: 100, decimals: 1 },
+                        width: { type: "number", min: 1, max: 100, decimals: 1 },
+                        height: { type: "number", min: 1, max: 100, decimals: 1 }
+                    }},
+                    carrier: { type: "choice", options: ["FedEx", "UPS", "DHL", "USPS"] },
+                    status: { type: "choice", options: ["pending", "in_transit", "delivered", "exception"] },
+                    estimatedDelivery: { type: "date" }
+                }
+            }
+        };
+
+        // Data generators
+        const generators = {
+            number: (config) => {
+                const min = config.min || 0;
+                const max = config.max || 100;
+                const decimals = config.decimals || 0;
+                const value = Math.random() * (max - min) + min;
+                return decimals > 0 ? parseFloat(value.toFixed(decimals)) : Math.floor(value);
+            },
+            
+            string: (config) => {
+                if (config.pattern) {
+                    let result = config.pattern;
+                    result = result.replace(/\{number\}/g, () => Math.floor(Math.random() * 1000));
+                    result = result.replace(/\{firstName\}/g, () => generators.firstName());
+                    result = result.replace(/\{lastName\}/g, () => generators.lastName());
+                    return result;
+                }
+                const length = config.length || 10;
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                return Array.from({length}, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+            },
+            
+            boolean: () => Math.random() > 0.5,
+            
+            date: () => {
+                const start = new Date(2020, 0, 1);
+                const end = new Date();
+                return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime())).toISOString().split('T')[0];
+            },
+            
+            datetime: () => {
+                const start = new Date(2020, 0, 1);
+                const end = new Date();
+                return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime())).toISOString();
+            },
+            
+            uuid: () => {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            },
+            
+            choice: (config) => {
+                const options = config.options || ['option1', 'option2', 'option3'];
+                return options[Math.floor(Math.random() * options.length)];
+            },
+            
+            firstName: () => {
+                const names = ['John', 'Jane', 'Michael', 'Sarah', 'David', 'Lisa', 'Chris', 'Emma', 'Daniel', 'Anna'];
+                return names[Math.floor(Math.random() * names.length)];
+            },
+            
+            lastName: () => {
+                const names = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
+                return names[Math.floor(Math.random() * names.length)];
+            },
+            
+            email: () => {
+                const firstNames = ['john', 'jane', 'mike', 'sarah', 'david', 'lisa', 'chris', 'emma'];
+                const domains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'company.com'];
+                const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+                const domain = domains[Math.floor(Math.random() * domains.length)];
+                return `${firstName}${Math.floor(Math.random() * 1000)}@${domain}`;
+            },
+            
+            phone: () => {
+                return `+1-${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 9000 + 1000)}`;
+            },
+            
+            username: () => {
+                const adjectives = ['cool', 'super', 'awesome', 'great', 'amazing'];
+                const nouns = ['user', 'person', 'player', 'member', 'account'];
+                return `${adjectives[Math.floor(Math.random() * adjectives.length)]}_${nouns[Math.floor(Math.random() * nouns.length)]}_${Math.floor(Math.random() * 1000)}`;
+            },
+            
+            companyName: () => {
+                const prefixes = ['Tech', 'Global', 'Smart', 'Digital', 'Advanced'];
+                const suffixes = ['Corp', 'Inc', 'LLC', 'Ltd', 'Systems'];
+                return `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${suffixes[Math.floor(Math.random() * suffixes.length)]}`;
+            },
+            
+            productName: () => {
+                const adjectives = ['Premium', 'Ultra', 'Pro', 'Max', 'Elite'];
+                const products = ['Widget', 'Device', 'Tool', 'System', 'Solution'];
+                return `${adjectives[Math.floor(Math.random() * adjectives.length)]} ${products[Math.floor(Math.random() * products.length)]}`;
+            },
+            
+            word: () => {
+                const words = ['technology', 'innovation', 'solution', 'premium', 'quality', 'service', 'product', 'design'];
+                return words[Math.floor(Math.random() * words.length)];
+            },
+            
+            sentence: () => {
+                const sentences = [
+                    'This is a sample sentence for testing purposes.',
+                    'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
+                    'The quick brown fox jumps over the lazy dog.',
+                    'Technology continues to evolve at an unprecedented pace.',
+                    'Innovation drives progress in modern society.'
+                ];
+                return sentences[Math.floor(Math.random() * sentences.length)];
+            },
+            
+            paragraph: () => {
+                const paragraphs = [
+                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.',
+                    'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo.',
+                    'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.',
+                    'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim.'
+                ];
+                return paragraphs[Math.floor(Math.random() * paragraphs.length)];
+            },
+            
+            city: () => {
+                const cities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego'];
+                return cities[Math.floor(Math.random() * cities.length)];
+            },
+            
+            hashtag: () => {
+                const tags = ['technology', 'innovation', 'business', 'startup', 'design', 'development', 'marketing', 'social'];
+                return `#${tags[Math.floor(Math.random() * tags.length)]}`;
+            },
+            
+            array: (config) => {
+                const length = config.length || 3;
+                const itemType = config.itemType || 'string';
+                return Array.from({length}, () => generators[itemType] ? generators[itemType](config) : generators.string(config));
+            },
+            
+            object: (config) => {
+                const obj = {};
+                if (config.properties) {
+                    for (const [key, propConfig] of Object.entries(config.properties)) {
+                        obj[key] = generateValue(propConfig);
+                    }
+                }
+                return obj;
+            }
+        };
+
+        // Current state
+        let currentTemplate = null;
+        let customFields = [];
+        let pastedTemplate = null;
+        let generatedData = null;
+        let parseTimeout = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            renderTemplates();
+            updateFormatOptions();
+            
+            // Add event listeners
+            document.getElementById('outputFormat').addEventListener('change', updateFormatOptions);
+        });
+
+        function renderTemplates() {
+            const grid = document.getElementById('templateGrid');
+            grid.innerHTML = '';
+            
+            for (const [key, template] of Object.entries(templates)) {
+                const card = document.createElement('div');
+                card.className = 'template-card';
+                card.innerHTML = `
+                    <h4>${template.name}</h4>
+                    <p>${template.description}</p>
+                `;
+                card.addEventListener('click', () => selectTemplate(key));
+                grid.appendChild(card);
+            }
+        }
+
+        function selectTemplate(templateKey) {
+            // Remove previous selection
+            document.querySelectorAll('.template-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Select current template
+            event.target.closest('.template-card').classList.add('selected');
+            currentTemplate = templateKey;
+            
+            // Clear custom fields and pasted template when template is selected
+            customFields = [];
+            pastedTemplate = null;
+            document.getElementById('customFields').innerHTML = '';
+            document.getElementById('templateInput').value = '';
+            document.getElementById('templateAnalysis').style.display = 'none';
+            document.getElementById('templateError').style.display = 'none';
+            
+            generatePreview();
+        }
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+            
+            // If switching to paste tab, focus the textarea
+            if (tabName === 'paste') {
+                setTimeout(() => {
+                    const textarea = document.getElementById('templateInput');
+                    if (textarea) {
+                        textarea.focus();
+                    }
+                }, 100);
+            }
+        }
+
+        function addCustomField() {
+            const fieldId = `field_${Date.now()}`;
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'field-builder';
+            fieldDiv.innerHTML = `
+                <div class="field-header">
+                    <h4>Field ${customFields.length + 1}</h4>
+                    <button class="btn secondary" onclick="removeCustomField('${fieldId}')">❌ Remove</button>
+                </div>
+                <div class="field-controls">
+                    <div class="form-group">
+                        <label>Field Name</label>
+                        <input type="text" id="${fieldId}_name" placeholder="fieldName" onchange="updateCustomField('${fieldId}')">
+                    </div>
+                    <div class="form-group">
+                        <label>Data Type</label>
+                        <select id="${fieldId}_type" onchange="updateCustomField('${fieldId}')">
+                            <option value="string">String</option>
+                            <option value="number">Number</option>
+                            <option value="boolean">Boolean</option>
+                            <option value="date">Date</option>
+                            <option value="datetime">DateTime</option>
+                            <option value="uuid">UUID</option>
+                            <option value="email">Email</option>
+                            <option value="firstName">First Name</option>
+                            <option value="lastName">Last Name</option>
+                            <option value="phone">Phone</option>
+                            <option value="choice">Choice/Enum</option>
+                            <option value="array">Array</option>
+                            <option value="object">Object</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="${fieldId}_options" style="display: none;">
+                        <label>Options (comma-separated)</label>
+                        <input type="text" id="${fieldId}_choices" placeholder="option1,option2,option3" onchange="updateCustomField('${fieldId}')">
+                    </div>
+                    <div class="form-group" id="${fieldId}_range" style="display: none;">
+                        <label>Min/Max Range</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="${fieldId}_min" placeholder="Min" onchange="updateCustomField('${fieldId}')">
+                            <input type="number" id="${fieldId}_max" placeholder="Max" onchange="updateCustomField('${fieldId}')">
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('customFields').appendChild(fieldDiv);
+            
+            // Initialize field object
+            customFields.push({
+                id: fieldId,
+                name: '',
+                type: 'string',
+                config: {}
+            });
+            
+            // Clear template selection and pasted template when adding custom fields
+            currentTemplate = null;
+            pastedTemplate = null;
+            document.getElementById('templateInput').value = '';
+            document.getElementById('templateAnalysis').style.display = 'none';
+            document.getElementById('templateError').style.display = 'none';
+            document.querySelectorAll('.template-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+        }
+
+        function removeCustomField(fieldId) {
+            // Remove from DOM
+            event.target.closest('.field-builder').remove();
+            
+            // Remove from array
+            customFields = customFields.filter(field => field.id !== fieldId);
+            
+            generatePreview();
+        }
+
+        function updateCustomField(fieldId) {
+            const field = customFields.find(f => f.id === fieldId);
+            if (!field) return;
+            
+            const name = document.getElementById(`${fieldId}_name`).value;
+            const type = document.getElementById(`${fieldId}_type`).value;
+            
+            field.name = name || `field${customFields.indexOf(field) + 1}`;
+            field.type = type;
+            
+            // Show/hide type-specific options
+            const optionsDiv = document.getElementById(`${fieldId}_options`);
+            const rangeDiv = document.getElementById(`${fieldId}_range`);
+            
+            optionsDiv.style.display = type === 'choice' ? 'block' : 'none';
+            rangeDiv.style.display = type === 'number' ? 'block' : 'none';
+            
+            // Update config based on type
+            if (type === 'choice') {
+                const choices = document.getElementById(`${fieldId}_choices`).value;
+                field.config.options = choices ? choices.split(',').map(s => s.trim()) : ['option1', 'option2'];
+            } else if (type === 'number') {
+                const min = document.getElementById(`${fieldId}_min`).value;
+                const max = document.getElementById(`${fieldId}_max`).value;
+                field.config.min = min ? parseFloat(min) : 0;
+                field.config.max = max ? parseFloat(max) : 100;
+            }
+            
+            generatePreview();
+        }
+
+        function updateFormatOptions() {
+            const format = document.getElementById('outputFormat').value;
+            // You can add format-specific UI updates here if needed
+        }
+
+        function generateValue(fieldConfig) {
+            // Handle nullable fields (10% chance of null)
+            if (fieldConfig.nullable && Math.random() < 0.1) {
+                return null;
+            }
+            
+            const generator = generators[fieldConfig.type];
+            if (generator) {
+                return generator(fieldConfig);
+            }
+            return null;
+        }
+
+        function generateRecord() {
+            const record = {};
+            
+            if (pastedTemplate) {
+                return generateRecordFromPasted();
+            } else if (currentTemplate) {
+                const template = templates[currentTemplate];
+                for (const [fieldName, fieldConfig] of Object.entries(template.fields)) {
+                    record[fieldName] = generateValue(fieldConfig);
+                }
+            } else if (customFields.length > 0) {
+                for (const field of customFields) {
+                    if (field.name) {
+                        record[field.name] = generateValue({type: field.type, ...field.config});
+                    }
+                }
+            }
+            
+            return record;
+        }
+
+        function formatOutput(data, format) {
+            switch (format) {
+                case 'json':
+                    const prettyPrint = document.getElementById('prettyPrint').checked;
+                    return JSON.stringify(data, null, prettyPrint ? 2 : 0);
+                
+                case 'csv':
+                    return formatAsCSV(data);
+                
+                case 'text':
+                    return data.map(record => JSON.stringify(record)).join('\n');
+                
+                default:
+                    return JSON.stringify(data, null, 2);
+            }
+        }
+
+        function formatAsCSV(data) {
+            if (!data || data.length === 0) return '';
+            
+            const delimiter = document.getElementById('csvDelimiter').value === '\\t' ? '\t' : document.getElementById('csvDelimiter').value;
+            const includeHeaders = document.getElementById('includeHeaders').checked;
+            const quoteStrings = document.getElementById('quoteStrings').checked;
+            
+            // Get all unique keys from all records
+            const allKeys = new Set();
+            data.forEach(record => {
+                Object.keys(flattenObject(record)).forEach(key => allKeys.add(key));
+            });
+            const headers = Array.from(allKeys);
+            
+            let csv = '';
+            
+            // Add headers
+            if (includeHeaders) {
+                csv += headers.join(delimiter) + '\n';
+            }
+            
+            // Add data rows
+            data.forEach(record => {
+                const flatRecord = flattenObject(record);
+                const row = headers.map(header => {
+                    let value = flatRecord[header] || '';
+                    if (typeof value === 'object') {
+                        value = JSON.stringify(value);
+                    }
+                    if (quoteStrings && typeof value === 'string') {
+                        value = `"${value.replace(/"/g, '""')}"`;
+                    }
+                    return value;
+                });
+                csv += row.join(delimiter) + '\n';
+            });
+            
+            return csv;
+        }
+
+        function flattenObject(obj, prefix = '') {
+            const flattened = {};
+            
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    const newKey = prefix ? `${prefix}.${key}` : key;
+                    
+                    if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+                        Object.assign(flattened, flattenObject(obj[key], newKey));
+                    } else {
+                        flattened[newKey] = obj[key];
+                    }
+                }
+            }
+            
+            return flattened;
+        }
+
+        function generatePreview() {
+            if (!currentTemplate && customFields.length === 0 && !pastedTemplate) {
+                document.getElementById('previewArea').textContent = 'Select a template, paste a sample object, or create custom fields to see preview...';
+                return;
+            }
+            
+            // Generate sample records
+            const sampleData = Array.from({length: 3}, () => generateRecord());
+            const format = document.getElementById('outputFormat').value;
+            const preview = formatOutput(sampleData, format);
+            
+            document.getElementById('previewArea').textContent = preview;
+            
+            // Update stats
+            updateStats(sampleData);
+        }
+
+        function updateStats(sampleData) {
+            if (!sampleData || sampleData.length === 0) return;
+            
+            const recordCount = parseInt(document.getElementById('recordCount').value) || 0;
+            const fieldCount = Object.keys(flattenObject(sampleData[0])).length;
+            const estimatedSize = Math.round((JSON.stringify(sampleData).length / 3) * recordCount / 1024);
+            
+            document.getElementById('statRecords').textContent = recordCount.toLocaleString();
+            document.getElementById('statFields').textContent = fieldCount;
+            document.getElementById('statSize').textContent = estimatedSize > 1024 ? 
+                `${(estimatedSize / 1024).toFixed(1)} MB` : `${estimatedSize} KB`;
+            
+            document.getElementById('stats').style.display = 'grid';
+        }
+
+        async function generateAndDownload() {
+            if (!currentTemplate && customFields.length === 0 && !pastedTemplate) {
+                alert('Please select a template, paste a sample object, or create custom fields first.');
+                return;
+            }
+            
+            const recordCount = parseInt(document.getElementById('recordCount').value);
+            const batchSize = parseInt(document.getElementById('batchSize').value);
+            const format = document.getElementById('outputFormat').value;
+            const fileName = document.getElementById('fileName').value || 'test_data';
+            
+            // Show progress
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const successAlert = document.getElementById('successAlert');
+            
+            progressContainer.style.display = 'block';
+            successAlert.style.display = 'none';
+            
+            let allData = [];
+            let processed = 0;
+            
+            // Generate data in batches to prevent browser freeze
+            while (processed < recordCount) {
+                const currentBatchSize = Math.min(batchSize, recordCount - processed);
+                const batchData = Array.from({length: currentBatchSize}, () => generateRecord());
+                allData = allData.concat(batchData);
+                
+                processed += currentBatchSize;
+                const progress = Math.round((processed / recordCount) * 100);
+                progressBar.style.width = `${progress}%`;
+                progressBar.textContent = `${progress}%`;
+                
+                // Allow UI to update
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
+            
+            // Format and download
+            const output = formatOutput(allData, format);
+            const extension = format === 'csv' ? 'csv' : (format === 'text' ? 'txt' : 'json');
+            const mimeType = format === 'csv' ? 'text/csv' : 'application/json';
+            
+            downloadFile(output, `${fileName}.${extension}`, mimeType);
+            
+            // Show success
+            progressContainer.style.display = 'none';
+            successAlert.style.display = 'block';
+            
+            // Store generated data for preview
+            generatedData = allData;
+        }
+
+        function downloadFile(content, fileName, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function clearAll() {
+            currentTemplate = null;
+            customFields = [];
+            pastedTemplate = null;
+            generatedData = null;
+            
+            document.getElementById('customFields').innerHTML = '';
+            document.getElementById('templateInput').value = '';
+            document.getElementById('templateAnalysis').style.display = 'none';
+            document.getElementById('templateError').style.display = 'none';
+            document.getElementById('previewArea').textContent = 'Select a template, paste a sample object, or create custom fields to see preview...';
+            document.getElementById('stats').style.display = 'none';
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('successAlert').style.display = 'none';
+            
+            document.querySelectorAll('.template-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+        }
+
+        // Paste Template Functions
+        function debounceParseTemplate() {
+            clearTimeout(parseTimeout);
+            parseTimeout = setTimeout(() => {
+                const input = document.getElementById('templateInput').value.trim();
+                if (input && input.length > 10) {
+                    parseTemplate();
+                }
+            }, 1000);
+        }
+
+        function parseTemplate() {
+            const input = document.getElementById('templateInput').value.trim();
+            const errorDiv = document.getElementById('templateError');
+            const analysisDiv = document.getElementById('templateAnalysis');
+            
+            if (!input) {
+                errorDiv.style.display = 'none';
+                analysisDiv.style.display = 'none';
+                return;
+            }
+            
+            try {
+                const parsed = JSON.parse(input);
+                const analyzedFields = analyzeObject(parsed);
+                
+                // Store the analyzed template
+                pastedTemplate = {
+                    original: parsed,
+                    fields: analyzedFields
+                };
+                
+                // Clear other selections
+                currentTemplate = null;
+                customFields = [];
+                document.getElementById('customFields').innerHTML = '';
+                document.querySelectorAll('.template-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                
+                // Show analysis
+                displayTemplateAnalysis(analyzedFields);
+                errorDiv.style.display = 'none';
+                analysisDiv.style.display = 'block';
+                
+                // Generate preview
+                generatePreview();
+                
+            } catch (error) {
+                errorDiv.style.display = 'block';
+                analysisDiv.style.display = 'none';
+                document.getElementById('errorMessage').textContent = `Invalid JSON: ${error.message}`;
+                pastedTemplate = null;
+            }
+        }
+
+        function clearTemplate() {
+            document.getElementById('templateInput').value = '';
+            document.getElementById('templateAnalysis').style.display = 'none';
+            document.getElementById('templateError').style.display = 'none';
+            pastedTemplate = null;
+            
+            document.getElementById('previewArea').textContent = 'Select a template, paste a sample object, or create custom fields to see preview...';
+            document.getElementById('stats').style.display = 'none';
+        }
+
+        function analyzeObject(obj, path = '') {
+            const fields = {};
+            
+            for (const [key, value] of Object.entries(obj)) {
+                const fieldPath = path ? `${path}.${key}` : key;
+                const analysis = analyzeValue(value);
+                fields[fieldPath] = analysis;
+            }
+            
+            return fields;
+        }
+
+        function analyzeValue(value) {
+            if (value === null) {
+                return { type: 'string', config: {}, nullable: true };
+            }
+            
+            if (Array.isArray(value)) {
+                if (value.length === 0) {
+                    return { type: 'array', config: { itemType: 'string', length: 3 } };
+                }
+                
+                // Analyze array items to determine type
+                const firstItem = value[0];
+                const itemAnalysis = analyzeValue(firstItem);
+                
+                return {
+                    type: 'array',
+                    config: {
+                        itemType: itemAnalysis.type,
+                        length: Math.max(2, Math.min(value.length, 5)),
+                        ...itemAnalysis.config
+                    }
+                };
+            }
+            
+            if (typeof value === 'object') {
+                return {
+                    type: 'object',
+                    config: {
+                        properties: analyzeObject(value)
+                    }
+                };
+            }
+            
+            if (typeof value === 'boolean') {
+                return { type: 'boolean', config: {} };
+            }
+            
+            if (typeof value === 'number') {
+                const isFloat = value % 1 !== 0;
+                const config = {
+                    min: Math.max(0, value - Math.abs(value) * 0.5),
+                    max: value + Math.abs(value) * 0.5
+                };
+                
+                if (isFloat) {
+                    config.decimals = value.toString().split('.')[1]?.length || 2;
+                }
+                
+                return { type: 'number', config };
+            }
+            
+            if (typeof value === 'string') {
+                return inferStringType(value);
+            }
+            
+            return { type: 'string', config: {} };
+        }
+
+        function inferStringType(str) {
+            // Email pattern
+            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str)) {
+                return { type: 'email', config: {} };
+            }
+            
+            // UUID pattern
+            if (/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str)) {
+                return { type: 'uuid', config: {} };
+            }
+            
+            // Phone pattern
+            if (/^\+?[\d\s\-\(\)]{10,}$/.test(str)) {
+                return { type: 'phone', config: {} };
+            }
+            
+            // Date pattern (ISO format)
+            if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+                return { type: 'date', config: {} };
+            }
+            
+            // DateTime pattern (ISO format)
+            if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(str)) {
+                return { type: 'datetime', config: {} };
+            }
+            
+            // URL pattern
+            if (/^https?:\/\//.test(str)) {
+                return { type: 'string', config: { pattern: 'https://example.com/{number}' } };
+            }
+            
+            // Check if it looks like a name
+            if (/^[A-Z][a-z]+ [A-Z][a-z]+$/.test(str)) {
+                return { type: 'string', config: { pattern: '{firstName} {lastName}' } };
+            }
+            
+            // Check if it contains numbers that might be a pattern
+            if (/\d+/.test(str)) {
+                const pattern = str.replace(/\d+/g, '{number}');
+                return { type: 'string', config: { pattern } };
+            }
+            
+            // Long text (likely paragraph)
+            if (str.length > 100) {
+                return { type: 'paragraph', config: {} };
+            }
+            
+            // Medium text (likely sentence)
+            if (str.length > 30) {
+                return { type: 'sentence', config: {} };
+            }
+            
+            // Default to word for short strings
+            if (str.length <= 30) {
+                return { type: 'word', config: {} };
+            }
+            
+            return { type: 'string', config: {} };
+        }
+
+        function displayTemplateAnalysis(fields) {
+            const fieldCount = Object.keys(fields).length;
+            document.getElementById('analyzedFieldCount').textContent = fieldCount;
+            
+            const detectedFields = document.getElementById('detectedFields');
+            let analysis = 'Detected Field Structure:\n\n';
+            
+            for (const [fieldPath, config] of Object.entries(fields)) {
+                analysis += `${fieldPath}:\n`;
+                analysis += `  Type: ${config.type}\n`;
+                if (Object.keys(config.config).length > 0) {
+                    analysis += `  Config: ${JSON.stringify(config.config, null, 2).replace(/\n/g, '\n  ')}\n`;
+                }
+                if (config.nullable) {
+                    analysis += `  Nullable: true\n`;
+                }
+                analysis += '\n';
+            }
+            
+            detectedFields.textContent = analysis;
+        }
+
+        function generateRecordFromPasted() {
+            if (!pastedTemplate) return {};
+            
+            const record = {};
+            
+            for (const [fieldPath, config] of Object.entries(pastedTemplate.fields)) {
+                setNestedValue(record, fieldPath, generateValue(config));
+            }
+            
+            return record;
+        }
+
+        function setNestedValue(obj, path, value) {
+            const parts = path.split('.');
+            let current = obj;
+            
+            for (let i = 0; i < parts.length - 1; i++) {
+                const part = parts[i];
+                if (!(part in current)) {
+                    current[part] = {};
+                }
+                current = current[part];
+            }
+            
+            current[parts[parts.length - 1]] = value;
+        }
+    </script>
+</body>
+</html>

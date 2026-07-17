@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--   Bob Robles 2023                -->
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="https://fonts.googleapis.com/css2?family=Schoolbell&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+	<title>Speak Game</title>
+	<style>
+		body {
+			align-items: center;
+			background-attachment: fixed;
+			background-color: #A7D8DE;
+			background-image: url('background.jpg');
+			background-position: center top;
+			background-repeat: no-repeat;
+			background-size: contain;
+			display: flex;
+			flex-direction: column;
+			height: 100vh;
+			justify-content: center;
+			margin: 0;
+			overflow-x: hidden
+		}
+		h1 {
+			color: #333;
+			text-align: center;
+			background-color: rgba(255, 255, 255, 0.7);
+			padding: 10px;
+			max-width: 90%;
+			margin: 20px auto;
+			border-radius: 10px;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			font-family: 'Arial', sans-serif;
+		}
+		h1 {
+			font-family: 'Permanent Marker', cursive;
+			text-align: center;
+			color: #333;
+		}
+		body {
+			background-image: url('background.jpg');
+			background-size: cover;
+			background-repeat: no-repeat;
+			background-position: center;
+		}
+		#userGreeting {
+			background-color: rgba(100%, 100%, 87.8%, 0.8);
+			border-radius: 5px;
+			font-family: 'Schoolbell', cursive;
+			padding: 5px 10px;
+			text-align: center;
+			width: 100%
+		}
+		#textInput {
+			font-size: 20px;
+			padding: 10px;
+			width: 300px;
+			height: 200px;
+			margin-bottom: 20px;
+		}
+		.controls {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: space-around;
+			width: 100%
+		}
+		button {
+			background-color: #FFD700;
+			border-radius: 3px;
+			border: 2px solid brown;
+			box-sizing: border-box;
+			color: black;
+			cursor: pointer;
+			flex: 1;
+			font-size: 20px;
+			margin: 0 2px;
+			min-width: 50px;
+			padding: 8px 5px
+		}
+		button:hover {
+			background-color: #FFC222
+		}
+
+		select {
+			font-size: 20px;
+			padding: 10px;
+			border-radius: 10px;
+			background-color: #98fb98;
+		}
+		textarea {
+			font-size: 20px;
+			padding: 10px;
+			width: 300px;
+			height: 100px;
+			/* Set the height to make it deeper */
+			margin-bottom: 20px;
+			resize: none;
+			/* Optional: prevents resizing */
+			overflow-y: auto;
+			/* Allows scrolling */
+		}
+
+	</style>
+</head>
+<body>
+	<h1><span id="userGreeting">Speak Game</span></h1> <!-- Title Header with background span -->
+	<div class="controls">
+		<button onclick="speakText()">Speak</button>
+		<button onclick="speakLetters()">Speak Letters</button>
+		<button onclick="clearText()">Clear</button>
+	</div>
+	<br>
+	<textarea id="textInput" placeholder="Type something..."></textarea>
+	<select id="wordList" onchange="selectWord()">
+		<option value="">Select a word...</option>
+		<option value="apple">Apple</option>
+		<option value="ball">Ball</option>
+		<option value="cat">Cat</option>
+		<option value="dog">Dog</option>
+		<option value="elephant">Elephant</option>
+		<option value="fish">Fish</option>
+		<option value="giraffe">Giraffe</option>
+		<option value="house">House</option>
+		<option value="icecream">Ice Cream</option>
+		<option value="juice">Juice</option>
+		<option value="kite">Kite</option>
+		<option value="lion">Lion</option>
+		<option value="monkey">Monkey</option>
+		<option value="nest">Nest</option>
+		<option value="octopus">Octopus</option>
+		<option value="penguin">Penguin</option>
+		<option value="a fresh and fruity QT patootie">QT Patootie</option>
+		<option value="queen">Queen</option>
+		<option value="rabbit">Rabbit</option>
+		<option value="snake">Snake</option>
+		<option value="tiger">Tiger</option>
+		<option value="umbrella">Umbrella</option>
+		<option value="violin">Violin</option>
+		<option value="whale">Whale</option>
+		<option value="xylophone">Xylophone</option>
+		<option value="yak">Yak</option>
+		<option value="yarrg">Yarrg</option>
+		<option value="zebra">Zebra</option>
+	</select>
+
+	<script src="speakText.js"></script>
+</body>
+</html>

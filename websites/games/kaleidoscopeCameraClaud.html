@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Kaleidoscope</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            color: #e94560;
+            text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(26, 26, 46, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            width: 100%;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            margin: 0 15px;
+        }
+        
+        .control-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #e94560;
+        }
+        
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background: #e94560;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:hover {
+            background: #ff6b81;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        input[type="range"] {
+            width: 150px;
+            height: 8px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #e94560;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #e94560;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 50%;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: 50%;
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.7), 
+                       0 0 60px rgba(26, 26, 46, 0.5);
+            background: #000;
+        }
+        
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .video-container {
+            position: fixed;
+            left: -9999px;
+            top: -9999px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-label {
+            display: inline-block;
+            padding: 10px 15px;
+            background: #0f3460;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .file-label:hover {
+            background: #1a5b9a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .preset-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .preset-btn {
+            background: #0f3460;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .preset-btn:hover {
+            background: #1a5b9a;
+            transform: translateY(-2px);
+        }
+        
+        .download-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 10;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+        
+        /* Help modal styles */
+        .help-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #e94560;
+            color: white;
+            font-size: 1.5rem;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: transform 0.3s, background 0.3s;
+        }
+        
+        .help-btn:hover {
+            transform: scale(1.1);
+            background: #ff6b81;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow-y: auto;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 10px;
+            max-width: 800px;
+            width: 90%;
+            margin: 50px auto;
+            padding: 25px;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
+            color: #fff;
+            position: relative;
+            border: 1px solid rgba(233, 69, 96, 0.5);
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.8rem;
+            background: none;
+            border: none;
+            color: #e94560;
+            cursor: pointer;
+            transition: transform 0.3s, color 0.3s;
+        }
+        
+        .close-btn:hover {
+            transform: scale(1.2);
+            color: #ff6b81;
+        }
+        
+        .help-section {
+            margin-bottom: 20px;
+        }
+        
+        .help-section h3 {
+            color: #e94560;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(233, 69, 96, 0.3);
+            padding-bottom: 5px;
+        }
+        
+        .help-section p, .help-section li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .help-section ul {
+            padding-left: 25px;
+        }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .canvas-container {
+                height: 350px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .control-group {
+                margin: 10px 0;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Interactive Kaleidoscope</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <button id="cameraBtn" class="btn tooltip">
+                    Use Camera
+                    <span class="tooltiptext">Turn on your camera to use it as input</span>
+                </button>
+            </div>
+            
+            <div class="control-group">
+                <label for="fileInput" class="file-label tooltip">
+                    Upload Image
+                    <span class="tooltiptext">Select an image from your device</span>
+                </label>
+                <input type="file" id="fileInput" class="file-input" accept="image/*">
+            </div>
+            
+            <div class="control-group">
+                <label for="segments">Segments: <span id="segmentValue">6</span></label>
+                <input type="range" id="segments" min="3" max="20" value="6">
+            </div>
+            
+            <div class="control-group">
+                <label for="zoom">Zoom: <span id="zoomValue">1.0</span></label>
+                <input type="range" id="zoom" min="0.5" max="3" value="1" step="0.1">
+            </div>
+            
+            <div class="control-group">
+                <label for="speed">Rotation Speed</label>
+                <input type="range" id="speed" min="0" max="5" value="1" step="0.1">
+            </div>
+            
+            <div class="control-group">
+                <label for="colorFilter">Color Filter</label>
+                <input type="color" id="colorFilter" value="#ffffff">
+            </div>
+        </div>
+        
+        <div class="preset-buttons">
+            <button class="preset-btn" data-segments="8" data-zoom="1.2" data-speed="2">Cosmic Spin</button>
+            <button class="preset-btn" data-segments="12" data-zoom="1.5" data-speed="0.5">Flower</button>
+            <button class="preset-btn" data-segments="5" data-zoom="2" data-speed="1.5">Star Burst</button>
+            <button class="preset-btn" data-segments="16" data-zoom="0.8" data-speed="3">Crystal</button>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="kaleidoscope"></canvas>
+            <div id="loading" class="loading" style="display: none;">Loading...</div>
+        </div>
+        
+        <div class="download-container">
+            <button id="downloadBtn" class="btn">Download Image</button>
+        </div>
+        
+        <div class="footer">
+            <p>Move your mouse over the kaleidoscope to interact with it. Click and drag to create new patterns.</p>
+        </div>
+    </div>
+    
+    <!-- Help Button -->
+    <button class="help-btn" id="helpBtn">?</button>
+    
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" id="closeModal">×</button>
+            <h2 style="text-align: center; margin-bottom: 20px;">Kaleidoscope App Help</h2>
+            
+            <div class="help-section">
+                <h3>Getting Started</h3>
+                <p>Welcome to the Interactive Kaleidoscope! This app allows you to create beautiful kaleidoscopic patterns using your camera or uploaded images.</p>
+            </div>
+            
+            <div class="help-section">
+                <h3>Image Sources</h3>
+                <ul>
+                    <li><strong>Use Camera</strong> - Click this button to use your device's camera as a live input source. Click again to stop the camera.</li>
+                    <li><strong>Upload Image</strong> - Select this option to upload any image from your device to use as the source.</li>
+                </ul>
+            </div>
+            
+            <div class="help-section">
+                <h3>Controls</h3>
+                <ul>
+                    <li><strong>Segments</strong> - Adjust the number of reflective segments in the kaleidoscope (3-20). More segments create more complex patterns.</li>
+                    <li><strong>Zoom</strong> - Increase or decrease the zoom level of the source image.</li>
+                    <li><strong>Rotation Speed</strong> - Control how fast the kaleidoscope rotates. Set to zero for a static image.</li>
+                    <li><strong>Color Filter</strong> - Apply a color tint to the entire kaleidoscope. This works by using a "multiply" blend mode that combines the original colors with your selected color:
+                        <ul>
+                            <li>White (#ffffff): No change to the original colors</li>
+                            <li>Dark colors: Makes the image darker and shifts the color tone</li>
+                            <li>Vibrant colors: Creates dramatic colored effects while maintaining details</li>
+                            <li>Black (#000000): Would make the entire image black</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="help-section">
+                <h3>Interaction</h3>
+                <ul>
+                    <li><strong>Mouse/Touch</strong> - Click and drag (or touch and drag) directly on the kaleidoscope to shift the image and create new patterns.</li>
+                    <li><strong>Presets</strong> - Click on preset buttons below the controls for quick visual styles:
+                        <ul>
+                            <li>Cosmic Spin: Fast rotation with 8 segments</li>
+                            <li>Flower: Slow, elegant pattern with 12 segments</li>
+                            <li>Star Burst: High zoom with 5 segments</li>
+                            <li>Crystal: Fast, intricate pattern with 16 segments</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="help-section">
+                <h3>Saving Your Creation</h3>
+                <p>Click the <strong>Download Image</strong> button to save your current kaleidoscope view as a PNG image file.</p>
+            </div>
+            
+            <div class="help-section">
+                <h3>Tips</h3>
+                <ul>
+                    <li>Experiment with different segment numbers for dramatically different effects</li>
+                    <li>Try using the camera while moving around to create dynamic patterns</li>
+                    <li>Use colorful images for the most vibrant results</li>
+                    <li>Combine the color filter with different images to create unique moods</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="video-container">
+        <video id="video" autoplay playsinline></video>
+    </div>
+    
+    <script>
+        // DOM Elements
+        const canvas = document.getElementById('kaleidoscope');
+        const ctx = canvas.getContext('2d');
+        const video = document.getElementById('video');
+        const cameraBtn = document.getElementById('cameraBtn');
+        const fileInput = document.getElementById('fileInput');
+        const segmentsSlider = document.getElementById('segments');
+        const segmentValue = document.getElementById('segmentValue');
+        const zoomSlider = document.getElementById('zoom');
+        const zoomValue = document.getElementById('zoomValue');
+        const speedSlider = document.getElementById('speed');
+        const colorFilter = document.getElementById('colorFilter');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const presetButtons = document.querySelectorAll('.preset-btn');
+        const loading = document.getElementById('loading');
+        
+        // Kaleidoscope Settings
+        let segments = parseInt(segmentsSlider.value);
+        let zoom = parseFloat(zoomSlider.value);
+        let rotationSpeed = parseFloat(speedSlider.value);
+        let angle = 0;
+        let sourceImage = null;
+        let isUsingCamera = false;
+        let mouseX = 0;
+        let mouseY = 0;
+        let isDragging = false;
+        let offsetX = 0;
+        let offsetY = 0;
+        
+        // Initialize canvas size
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const size = Math.min(container.clientWidth, container.clientHeight);
+            canvas.width = size;
+            canvas.height = size;
+            
+            // If we have a source image, redraw
+            if (sourceImage) {
+                drawKaleidoscope();
+            }
+        }
+        
+        // Initial resize
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Camera setup
+        cameraBtn.addEventListener('click', async () => {
+            try {
+                loading.style.display = 'block';
+                
+                if (isUsingCamera) {
+                    // Stop camera
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                    video.srcObject = null;
+                    isUsingCamera = false;
+                    cameraBtn.textContent = 'Use Camera';
+                } else {
+                    // Start camera
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: 'environment' } 
+                    });
+                    video.srcObject = stream;
+                    
+                    video.onloadedmetadata = () => {
+                        isUsingCamera = true;
+                        cameraBtn.textContent = 'Stop Camera';
+                        sourceImage = video;
+                        resetOffsets();
+                        loading.style.display = 'none';
+                    };
+                }
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                alert('Could not access the camera. Please make sure you have granted permission.');
+                loading.style.display = 'none';
+            }
+        });
+        
+        // File upload
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                loading.style.display = 'block';
+                
+                // If using camera, stop it
+                if (isUsingCamera) {
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                    video.srcObject = null;
+                    isUsingCamera = false;
+                    cameraBtn.textContent = 'Use Camera';
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        sourceImage = img;
+                        resetOffsets();
+                        loading.style.display = 'none';
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Control updates
+        segmentsSlider.addEventListener('input', () => {
+            segments = parseInt(segmentsSlider.value);
+            segmentValue.textContent = segments;
+            if (sourceImage) drawKaleidoscope();
+        });
+        
+        zoomSlider.addEventListener('input', () => {
+            zoom = parseFloat(zoomSlider.value);
+            zoomValue.textContent = zoom.toFixed(1);
+            if (sourceImage) drawKaleidoscope();
+        });
+        
+        speedSlider.addEventListener('input', () => {
+            rotationSpeed = parseFloat(speedSlider.value);
+        });
+        
+        colorFilter.addEventListener('input', () => {
+            if (sourceImage) drawKaleidoscope();
+        });
+        
+        // Preset buttons
+        presetButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const presetSegments = parseInt(btn.dataset.segments);
+                const presetZoom = parseFloat(btn.dataset.zoom);
+                const presetSpeed = parseFloat(btn.dataset.speed);
+                
+                segments = presetSegments;
+                zoom = presetZoom;
+                rotationSpeed = presetSpeed;
+                
+                // Update UI
+                segmentsSlider.value = presetSegments;
+                segmentValue.textContent = presetSegments;
+                
+                zoomSlider.value = presetZoom;
+                zoomValue.textContent = presetZoom.toFixed(1);
+                
+                speedSlider.value = presetSpeed;
+                
+                if (sourceImage) drawKaleidoscope();
+            });
+        });
+        
+        // Download functionality
+        downloadBtn.addEventListener('click', () => {
+            if (!sourceImage) {
+                alert('Please add an image or use the camera first');
+                return;
+            }
+            
+            // Create a temporary link and trigger download
+            const link = document.createElement('a');
+            link.download = 'kaleidoscope_' + new Date().getTime() + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+        
+        // Mouse interactions
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+            
+            if (isDragging && sourceImage) {
+                offsetX += (mouseX - isDragging.lastX) * 0.5;
+                offsetY += (mouseY - isDragging.lastY) * 0.5;
+                
+                isDragging.lastX = mouseX;
+                isDragging.lastY = mouseY;
+            }
+        });
+        
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            isDragging = {
+                lastX: x,
+                lastY: y
+            };
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+        
+        // Touch events for mobile
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            mouseX = touch.clientX - rect.left;
+            mouseY = touch.clientY - rect.top;
+            
+            if (isDragging && sourceImage) {
+                offsetX += (mouseX - isDragging.lastX) * 0.5;
+                offsetY += (mouseY - isDragging.lastY) * 0.5;
+                
+                isDragging.lastX = mouseX;
+                isDragging.lastY = mouseY;
+            }
+        });
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            isDragging = {
+                lastX: x,
+                lastY: y
+            };
+        });
+        
+        canvas.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+        
+        canvas.addEventListener('touchcancel', () => {
+            isDragging = false;
+        });
+        
+        // Reset offsets when changing image source
+        function resetOffsets() {
+            offsetX = 0;
+            offsetY = 0;
+        }
+        
+        // Main drawing function
+        function drawKaleidoscope() {
+            if (!sourceImage) return;
+            
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(width, height) / 2;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Clip to a circle
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.clip();
+            
+            // Calculate segment angle
+            const segmentAngle = (Math.PI * 2) / segments;
+            
+            // Apply global filter color
+            const filterColor = colorFilter.value;
+            
+            // Draw each segment
+            for (let i = 0; i < segments; i++) {
+                ctx.save();
+                
+                // Move to center and rotate to segment position
+                ctx.translate(centerX, centerY);
+                ctx.rotate(angle + i * segmentAngle);
+                
+                // Create a triangular clip path for the segment
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(radius, Math.tan(segmentAngle / 2) * radius);
+                ctx.lineTo(radius, -Math.tan(segmentAngle / 2) * radius);
+                ctx.closePath();
+                ctx.clip();
+                
+                // Draw the image in the segment
+                const sourceWidth = isUsingCamera ? video.videoWidth : sourceImage.width;
+                const sourceHeight = isUsingCamera ? video.videoHeight : sourceImage.height;
+                
+                // Apply color filter
+                if (filterColor !== '#ffffff') {
+                    ctx.globalCompositeOperation = 'multiply';
+                    ctx.fillStyle = filterColor;
+                    ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
+                    ctx.globalCompositeOperation = 'source-over';
+                }
+                
+                // Alternate mirroring for adjacent segments
+                if (i % 2 === 0) {
+                    ctx.scale(1, 1); // Normal
+                } else {
+                    ctx.scale(1, -1); // Flip Y
+                }
+                
+                // Draw the image with zoom and offset
+                ctx.drawImage(
+                    sourceImage,
+                    0, 0, sourceWidth, sourceHeight,
+                    -radius + offsetX, -radius + offsetY,
+                    radius * 2 * zoom, radius * 2 * zoom
+                );
+                
+                ctx.restore();
+            }
+            
+            // Restore original context
+            ctx.restore();
+        }
+        
+        // Animation loop
+        function animate() {
+            if (sourceImage) {
+                // Increment rotation angle based on speed
+                angle += rotationSpeed * 0.005;
+                
+                // If using camera, constantly update
+                if (isUsingCamera && video.readyState === video.HAVE_ENOUGH_DATA) {
+                    drawKaleidoscope();
+                } else if (!isUsingCamera && rotationSpeed > 0) {
+                    // Only redraw if we have rotation for static images
+                    drawKaleidoscope();
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Start animation
+        animate();
+        
+        // Load a default image to start with
+        const defaultImg = new Image();
+        defaultImg.onload = () => {
+            sourceImage = defaultImg;
+            drawKaleidoscope();
+        };
+        defaultImg.src = '/api/placeholder/800/800';
+        
+        // Help modal functionality
+        const helpBtn = document.getElementById('helpBtn');
+        const helpModal = document.getElementById('helpModal');
+        const closeModal = document.getElementById('closeModal');
+        
+        helpBtn.addEventListener('click', () => {
+            helpModal.style.display = 'block';
+        });
+        
+        closeModal.addEventListener('click', () => {
+            helpModal.style.display = 'none';
+        });
+        
+        // Close modal when clicking outside of it
+        window.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                helpModal.style.display = 'none';
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && helpModal.style.display === 'block') {
+                helpModal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

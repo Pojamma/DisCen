@@ -1,0 +1,226 @@
+# DisCen Project .gitignore
+
+# ============================================
+# NODE.JS / NPM
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+package-lock.json
+yarn.lock
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# ============================================
+# HIDDEN FILES & SYSTEM FILES
+# ============================================
+# All hidden files (starting with .)
+.*
+
+# But allow these important ones
+!.gitignore
+!.gitkeep
+!.htaccess
+
+# System Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.DS_Store?
+.Spotlight-V100
+.Trashes
+Icon?
+
+# ============================================
+# LOGS & TEMPORARY FILES
+# ============================================
+logs/
+*.log
+log/
+temp/
+tmp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# ============================================
+# BACKUPS & ARCHIVES
+# ============================================
+backups/
+backup/
+*.backup
+*.bak
+*.old
+*.orig
+archive/
+archives/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# ============================================
+# SECURITY & CREDENTIALS
+# ============================================
+# SSH Keys
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+
+# Configuration files that might contain secrets
+config.json
+secrets.json
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.config
+auth.json
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================
+# BUILD & COMPILED FILES
+# ============================================
+dist/
+build/
+out/
+*.min.js
+*.min.css
+*.bundle.js
+*.bundle.css
+*.map
+
+# ============================================
+# EDITOR & IDE FILES
+# ============================================
+.vscode/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*.un~
+Session.vim
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# ============================================
+# OPERATING SYSTEM FILES
+# ============================================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# PROJECT SPECIFIC
+# ============================================
+*.old/
+*_backup/
+*_bak/
+
+# Conflict files
+*conflict*
+
+# Test files
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Documentation builds
+docs/_build/
+site/
+
+# ============================================
+# SSL Certificates
+# ============================================
+*.crt
+*.cert
+*.ca-bundle
+*.p7b
+*.p7s
+*.der
+
+# ============================================
+# CUSTOM ADDITIONS
+# ============================================
+# Claude Code directory
+.claude/
+
+# Secure documentation directory
+secure-docs/

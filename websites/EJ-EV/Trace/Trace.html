@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--   Bob Robles 2023                -->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Schoolbell&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <title>Alphabet Tracing App</title>
+<style>
+  body {
+    align-items: center;
+    background-attachment: fixed;
+    background-color: #A7D8DE;
+    background-image: url('background.jpg');
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-size: contain;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    justify-content: center;
+    margin: 0;
+    overflow-x: hidden
+  }
+  #userGreeting {
+    background-color: rgba(100%, 100%, 87.8%, 0.8);
+    border-radius: 5px;
+    font-family: 'Schoolbell', cursive;
+    padding: 5px 10px;
+    text-align: center;
+    width: 100%
+  }
+  canvas {
+    background-color: rgba(255, 255, 255, 1)
+  }
+  #tracingCanvas {
+    background-color: rgba(255, 248, 220, 1);
+    border: 5px solid #FFA07A;
+    cursor: crosshair;
+    margin-top: 5px
+  }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    width: 100%
+  }
+  button {
+    background-color: #FFD700;
+    border-radius: 3px;
+    border: 2px solid brown;
+    box-sizing: border-box;
+    color: black;
+    cursor: pointer;
+    flex: 1;
+    font-size: 20px;
+    margin: 0 2px;
+    min-width: 50px;
+    padding: 8px 5px
+  }
+  button:hover {
+    background-color: #FFC222
+  }
+  #colorPicker {
+    border-radius: 50%;
+    border: 2px solid #000;
+    cursor: pointer;
+    height: 30px;
+    margin-left: 10px;
+    width: 30px
+  }
+  #alphabetContainer {
+    align-items: center;
+    background-color: #f8f8f8;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    font-size: 14px;
+    height: 50px;
+    justify-content: left;
+    margin-top: 10px;
+    max-width: 100%;
+    min-height: 50px;
+    overflow-x: auto;
+    padding-left: 180px;
+    padding: 0 5px;
+    white-space: nowrap
+  }
+  .active-letter {
+    color: #FF6347;
+    font-weight: bold;
+    text-shadow: 0px 0px 2px #000
+  }
+  #alphabetContainer span {
+    padding: 0 5px;
+    user-select: none
+  }
+  h1 {
+    text-align: center;
+    width: 100%
+  }
+  #toggleModeButton.on {
+    background-color: green;
+    color: white
+  }
+  #toggleModeButton.off {
+    background-color: blue;
+    color: white
+  }
+  .break-after {
+    flex-basis: 100%;
+    height: 0
+  }
+</style>
+
+</head>
+<body>
+ 
+  <h1><span id="userGreeting">Letter Tracer</span></h1> <!-- Title Header with background span -->
+  <div class="controls">
+    <button id="nextButton"><i class="fas fa-chevron-right"></i></button>
+    <button id="clearDrawingButton"><i class="fas fa-trash"></i></button>
+    <button id="undoButton"><i class="fa fa-undo"></i></button>
+    <button id="speakButton"><i class="fas fa-volume-up"></i></button>
+    <button id="randomButton"><i class="fas fa-random"></i></button>
+    <!-- Invisible break element -->
+    <div class="break-after"></div>
+    <div id="colorPicker"></div>
+    <input type="color" id="colorChooser" hidden />
+    <!-- Add a hidden input for color picking -->
+    <button id="toggleFontStyleButton"><i class="fas fa-font"></i></button>
+    <button id="toggleModeButton">ABC123</button>
+  </div>
+  <div id="alphabetContainer" width="380">hola</div>
+ <canvas id="tracingCanvas" width="380" height="360"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+  <script>
+    eruda.init();
+  </script>
+  <script>
+    const canvas = document.getElementById('tracingCanvas');
+    const ctx = canvas.getContext('2d');
+    // Set drawing parameters
+    ctx.lineWidth = 10; // Makes the line thicker
+    ctx.strokeStyle = '#FF6347'; // Tomato color for the line
+    ctx.lineCap = 'round'; // Round end caps for the line
+
+    let drawing = false;
+    let currentLetter = '';
+    let mode = 'letters'; // Default to letters mode
+    let hasShownSpeechSupportMessage = false;
+    let isCursive = false;
+    let currentLetterIndex = -1;
+    let currentNumber = 0;
+    let canvasStates = [];
+    const maxStates = 10; // Limit the number of states stored to avoid memory issues
+    let initialState = null;
+    updateAlphabetContainer();
+
+    // Initialize the color picker circle with the current color
+    updateTraceColor('#FF6347');
+    selectNewLetterOrNumber();
+    toggleFontStyle();
+    toggleFontStyle();
+    // Initiate by drawing a letter or number
+    drawLetterOrNumber();
+    displayUserName();
+    updateAlphabetContainer();
+
+    // ===== Functions =====
+    function updateAlphabetContainer() { const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; const numbers = '0123456789'; let containerHtml = ''; const current = mode === 'letters' ? alphabet: numbers; for (let char of current) { const isActive = (mode === 'letters' && currentLetter.includes(char)) || (mode === 'numbers' && currentLetter === char); containerHtml += `<span class="${isActive ? 'active-letter': ''}" data-char="${char}">${char}</span>`; } document.getElementById('alphabetContainer').innerHTML = containerHtml; document.querySelectorAll('#alphabetContainer span').forEach((span, index) => { span.addEventListener('click', function() { currentLetter = this.getAttribute('data-char'); currentLetterIndex = index; if (mode === 'letters') { currentLetter += currentLetter.toLowerCase();speakLetter(currentLetter); } canvasStates = []; drawLetterOrNumber(); drawLetterOrNumber(); updateAlphabetContainer(); }); }); }
+    function drawLetterOrNumber() { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.font = isCursive ? '220px Dancing Script': '220px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#7FFFD4'; let xPosition = canvas.width / 2; let yPosition = canvas.height / 2; if (mode === 'letters') { let spacing = 80; let firstCharXPos = xPosition - spacing; let secondCharXPos = xPosition + spacing; ctx.fillText(currentLetter[0], firstCharXPos, yPosition); ctx.fillText(currentLetter[1], secondCharXPos, yPosition); } else { ctx.fillText(currentLetter, xPosition, yPosition); } initialState = canvas.toDataURL(); }
+    function toggleMode() { mode = mode === 'letters' ? 'numbers': 'letters'; const toggleButton = document.getElementById('toggleModeButton'); if (mode === 'letters') { toggleButton.classList.remove('off'); toggleButton.classList.add('on'); } else { toggleButton.classList.remove('on'); toggleButton.classList.add('off'); } selectLetterOrNumber(); drawLetterOrNumber(); updateAlphabetContainer(); }
+    function toggleFontStyle() { isCursive = !isCursive; document.getElementById('toggleFontStyleButton').textContent = isCursive ? 'Cursive': 'Print'; drawLetterOrNumber(); }
+    function stopDrawing() { drawing = false; ctx.beginPath(); }
+    function saveCanvasState() { if (canvasStates.length >= maxStates) canvasStates.shift(); canvasStates.push(canvas.toDataURL()); }
+    function getUserInfoFromURL() { const params = new URLSearchParams(window.location.search); return { userName: params.get('user'), nickname: params.get('nickname') }; }
+    function speakText(text) { if (!window.speechSynthesis) { console.log("Speech synthesis not supported in this browser"); return; } var utterance = new SpeechSynthesisUtterance(text); window.speechSynthesis.speak(utterance); }
+    function undoLastAction() { if (canvasStates.length === 0) { if (initialState) { let img = new Image(); img.onload = function() { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); }; img.src = initialState; } updateAlphabetContainer(); return; } canvasStates.pop(); let lastState = canvasStates.length > 0 ? canvasStates[canvasStates.length - 1]: initialState; let img = new Image(); img.onload = function() { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); }; img.src = lastState; updateAlphabetContainer(); }
+    function displayUserName() { const userInfo = getUserInfoFromURL(); if (userInfo.userName) { document.getElementById('userGreeting').innerHTML = 'Hi ' + userInfo.nickname + ' Trace game!'; } }
+    function selectLetterOrNumber() { if (mode === 'letters') { let upperCaseLetter = String.fromCharCode(65 + currentLetterIndex); let lowerCaseLetter = upperCaseLetter.toLowerCase(); currentLetter = upperCaseLetter + lowerCaseLetter; } else { currentLetter = currentNumber.toString(); } updateAlphabetContainer(); }
+    function selectNewLetterOrNumber() { if(mode === 'letters') { currentLetterIndex = (currentLetterIndex + 1) % 26; let upperCaseLetter = String.fromCharCode(65 + currentLetterIndex); let lowerCaseLetter = upperCaseLetter.toLowerCase(); currentLetter = upperCaseLetter + lowerCaseLetter; } else { currentNumber = (currentNumber + 1) % 10; currentLetter = currentNumber.toString(); } updateAlphabetContainer(); canvasStates = []; drawLetterOrNumber(); } 
+    function selectRandomLetterOrNumber() { if(mode === 'letters') { let randomIndex = Math.floor(Math.random() * 26); let upperCaseLetter = String.fromCharCode(65 + randomIndex); let lowerCaseLetter = upperCaseLetter.toLowerCase(); currentLetter = upperCaseLetter + lowerCaseLetter; currentLetterIndex = randomIndex + 0; } else { currentNumber = Math.floor(Math.random() * 10).toString(); currentLetter = currentNumber; } updateAlphabetContainer(); canvasStates = []; drawLetterOrNumber(); }
+    function getPosition(event) { const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; return { x: (event.clientX - rect.left) * scaleX, y: (event.clientY - rect.top) * scaleY }; }
+    function speakLetter(letter) { let firstLetter = letter.charAt(0); if ('speechSynthesis' in window) { let utterance = new SpeechSynthesisUtterance(firstLetter); utterance.lang = 'en-US'; window.speechSynthesis.speak(utterance); } else if (!hasShownSpeechSupportMessage) { alert("Sorry, your browser doesn't support text speech."); hasShownSpeechSupportMessage = true; } }
+    function clearDrawing() { ctx.clearRect(0, 0, canvas.width, canvas.height); drawLetterOrNumber(); }
+    function startDrawing(pos) { if (!drawing) { saveCanvasState(); } drawing = true; ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }
+    function draw(pos) { if (!drawing) return; ctx.lineTo(pos.x, pos.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }
+    function updateTraceColor(newColor) { ctx.strokeStyle = newColor; document.getElementById('colorPicker').style.backgroundColor = newColor; }
+    function getTouchPos(canvasDom, touchEvent) { const rect = canvasDom.getBoundingClientRect(); const scaleX = canvasDom.width / rect.width; const scaleY = canvasDom.height / rect.height; return { x: (touchEvent.touches[0].clientX - rect.left) * scaleX, y: (touchEvent.touches[0].clientY - rect.top) * scaleY }; }
+    
+    // ===== Event listeners =====
+
+    canvas.addEventListener('mousedown', (e) => startDrawing(getPosition(e)));
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mousemove', (e) => {
+      if (drawing) {
+        draw(getPosition(e));
+      }
+    });
+    canvas.addEventListener('touchstart', function(e) {
+      const touch = e.touches[0];
+      const mouseEvent = new MouseEvent('mousedown', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+      });
+      canvas.dispatchEvent(mouseEvent);
+    }, false);
+    canvas.addEventListener('touchmove', function(e) {
+      e.preventDefault(); // This prevents the default scrolling behavior on touch move
+      const touch = e.touches[0];
+      const mouseEvent = new MouseEvent('mousemove', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+      });
+      canvas.dispatchEvent(mouseEvent);
+    }, false);
+    canvas.addEventListener('touchend', function(e) {
+      const mouseEvent = new MouseEvent('mouseup', {});
+      canvas.dispatchEvent(mouseEvent);
+    }, false);
+    document.addEventListener('DOMContentLoaded', function() {
+      toggleMode(); // This will set the initial state of the toggle button
+      toggleMode(); // do it twice for ABC to show
+    });
+    document.getElementById('colorPicker').addEventListener('click', function() {
+      document.getElementById('colorChooser').click();
+    });
+    document.getElementById('colorChooser').addEventListener('change', function(e) {
+      updateTraceColor(e.target.value);
+    });
+    // bobo
+    document.getElementById('nextButton').addEventListener('click', function() {
+      selectNewLetterOrNumber();
+      drawLetterOrNumber();
+      speakLetter(currentLetter);
+    });
+    document.getElementById('clearDrawingButton').addEventListener('click', clearDrawing);
+    document.getElementById('undoButton').addEventListener('click', undoLastAction);
+    document.getElementById('toggleModeButton').addEventListener('click', toggleMode); // This should call toggleMode
+    document.getElementById('speakButton').addEventListener('click', function() {
+      speakLetter(currentLetter);
+    });
+    document.getElementById('toggleFontStyleButton').addEventListener('click', toggleFontStyle);
+    document.getElementById('randomButton').addEventListener('click', function() {
+      selectRandomLetterOrNumber();
+      speakLetter(currentLetter);
+    });
+
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distraction Central</title>
+    <style>
+        body {
+            background-color: #f3e5ab;
+            font-family: Arial, sans-serif;
+            color: #2b1d0e;
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+        }
+        h1 {
+            color: #4b2e13;
+            font-size: 2.5em;
+        }
+        .category-title {
+            color: #4b2e13;
+            font-size: 1.8em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #8b5a2b;
+            padding-bottom: 5px;
+        }
+        .menu {
+            margin: 0 auto;
+            max-width: 800px;
+            padding: 20px;
+            background-color: #d2b48c;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+        }
+        .category-container {
+            margin-bottom: 20px;
+        }
+        .menu-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .menu-item {
+            padding: 15px 10px;
+            background-color: #8b5a2b;
+            border-radius: 5px;
+            cursor: pointer;
+            color: #ffffff;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .menu-item:hover {
+            background-color: #c19a6b;
+            color: #2b1d0e;
+            transform: translateY(-3px);
+        }
+        .menu-item.games {
+            background-color: #8b5a2b;
+        }
+        .menu-item.utilities {
+            background-color: #5a8b2b;
+        }
+        .menu-item.tools {
+            background-color: #2b5a8b;
+        }
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #b38b59;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 0 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab:hover {
+            background-color: #c19a6b;
+        }
+        .tab.active {
+            background-color: #8b5a2b;
+        }
+        .search-container {
+            margin: 20px 0;
+        }
+        #searchInput {
+            padding: 10px;
+            width: 60%;
+            border-radius: 5px;
+            border: 1px solid #8b5a2b;
+            font-size: 1em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Distraction Central</h1>
+    
+    <div class="menu">
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search games & tools...">
+        </div>
+        
+        <div class="tab-container">
+            <button class="tab active" onclick="filterCategory('all')">All</button>
+            <button class="tab" onclick="filterCategory('entertainment')">Entertainment</button>
+            <button class="tab" onclick="filterCategory('utilities')">Utilities</button>
+            <button class="tab" onclick="filterCategory('tools')">Tools</button>
+        </div>
+        
+        <div id="gamesMenu"></div>
+    </div>
+
+    <script>
+        // Categorized list of items
+        const items = [
+            // Games
+         // { name: "Adventure", path: "adventure/Adventure.html", category: "entertainment" },
+            { name: "Asteroids", path: "games/asteroids.html", category: "entertainment" },
+         // { name: "Blackjack", path: "Blackjack1/blackjack.html", category: "entertainment" },
+            { name: "Blues Jam", path: "games/Blues_Jam_Gemini.html", category: "entertainment" },
+         // { name: "Chess", path: "chess/chess.html", category: "entertainment" },
+            { name: "Drawing Pad", path: "games/kids_drawing_pad.html", category: "entertainment" },
+         // { name: "Eliza", path: "Eliza.html", category: "entertainment" },
+            { name: "EJ and EV", path: "EJ-EV/menu.html", category: "entertainment" },
+            { name: "Flight Game", path: "games/flight_game.html", category: "entertainment" },
+            { name: "Game of Life", path: "games/game-of-life.html", category: "entertainment" },
+            { name: "Guess Capitals", path: "games/GuessCapitals/GuessCapitals.html", category: "entertainment" },
+            { name: "Hangman", path: "games/Hangman_Windsurf/hangman.html", category: "entertainment" },
+         // { name: "Hangman", path: "Hangman.html", category: "entertainment" },
+         // { name: "Hangman plus", path: "Hangman/Hangman.html", category: "entertainment" },
+         // { name: "Huggingface GPT", path: "GPT/GPT-API.html", category: "entertainment" },
+         // { name: "Jokes", path: "JokesGPT/Jokes.html", category: "entertainment" },
+            { name: "kaleidescope Draw Claude", path: "games/kaleidescopeDrawClaude.html", category: "entertainment" },
+            { name: "kaleidoscope Camera Claude", path: "games/kaleidoscopeCameraClaud.html", category: "entertainment" },
+         // { name: "kaleidoscope Camera Gemini", path: "kaleidoscopeCameraGemini.html", category: "entertainment" },
+         // { name: "kaleidoscope Draw Gemini", path: "kaleidoscopeDrawGemini.html", category: "entertainment" },
+            { name: "Kitten Pop Bugs", path: "games/kitten-pop-bugs.html", category: "entertainment" },
+            { name: "Minecraft Command Utility ChatGPT", path: "games/minecraft_command_builder_chatgpt.html", category: "entertainment" },
+            { name: "Minecraft Command Utility Claude", path: "games/minecraft-command-builder-claude.html", category: "entertainment" },
+         // { name: "Math Game 1", path: "math-game-claude.html", category: "entertainment" },
+         // { name: "Math Game 2", path: "math-game-chatgpt.html", category: "entertainment" },
+         // { name: "Math Game 3", path: "math-game-claude-v1.html", category: "entertainment" },
+            { name: "Maze", path: "games/maze_game.html", category: "entertainment" },
+            { name: "Pacman", path: "games/pacman_game.html", category: "entertainment" },
+         // { name: "Poker - Five-Card Draw", path: "poker/poker.html", category: "entertainment" },
+         // { name: "Poker Claude Five-Card Draw", path: "poker/pokerClaude.html", category: "entertainment" },
+         // { name: "Pong", path: "pong1/pong1.html", category: "entertainment" },
+            { name: "Sky Adventure Flight Game", path: "games/sky_adventure_flight_game.html", category: "entertainment" },
+            { name: "Space Invaders", path: "games/space_invaders.html", category: "entertainment" },
+         // { name: "Sudoku", path: "SudokuGPT/SudokuGPT.html", category: "entertainment" },
+            { name: "Snake", path: "games/snake_game.html", category: "entertainment" },
+            { name: "Tetris", path: "games/tetris.html", category: "entertainment" },
+            { name: "Word Search", path: "games/WordSearchGPT/wordsearch.html", category: "entertainment" },
+            { name: "Wordle", path: "games/Wordle/Wordle.html", category: "entertainment" },
+            
+            // Utilities
+         // { name: "Biorythm", path: "Biorhythm/Biorhythm3.html", category: "utilities" },
+         // { name: "Birthday calc", path: "Birthday calc/BirthdayCalc3.html", category: "utilities" },
+         // { name: "ConjuBob", path: "CunjuBob/conjuBob.html", category: "utilities" },
+         // { name: "Convert Units", path: "convertUnits/convertUnits.html", category: "utilities" },
+         // { name: "Date Calculator", path: "date_time_calculator.html", category: "utilities" },
+         // { name: "Date Countdown", path: "countdown.html", category: "utilities" },
+         // { name: "Encryption Tool", path: "Utility/encryption-tool.html", category: "utilities" },
+            { name: "Local Storage", path: "utility/local_storage.html", category: "utilities" },
+         // { name: "Medication Tracker", path: "Medication/medication.html", category: "utilities" },
+            { name: "Programmer Calculator", path: "games/programmer_calculator_decimal.html", category: "utilities" },
+         // { name: "Programmer Calculator", path: "programmer_calculator/programmer_calculator_decimal.html", category: "utilities" },
+         // { name: "Recipe Manager", path: "Recipe.html", category: "utilities" },
+         // { name: "SunCalc", path: "SunCalcWeb/SunCalcSlim.html", category: "utilities" },
+         // { name: "Superbowl Pool", path: "SuperbowlPool/pool.html", category: "utilities" },
+         // { name: "Superbowl Pool Copilot", path: "SuperbowlPoolCopilot/pool_copilot.html", category: "utilities" },
+         // { name: "Tip Calculator", path: "TipCalcGPT/TipCalc.html", category: "utilities" },
+            
+            // Tools
+         // { name: "Color Picker", path: "color picker/color picker jquery .html", category: "tools" },
+         // { name: "Compare File by Lines", path: "Utility/CompareFile/CompareFileLines.html", category: "tools" },
+         // { name: "Flexible Source Code Comparison Tool", path: "Utility/CompareFile/CompareTextOrFileTool.html", category: "tools" },
+         // { name: "Cookie Viewer", path: "Utility/cookie-viewer.html", category: "tools" },
+         // { name: "CSS Sort Inner", path: "Utility/sortCSS.html", category: "tools" },
+         // { name: "CSS Sort Top level", path: "Utility/sortCSSobj.html", category: "tools" },
+         // { name: "JSON Syntax Checker", path: "Utility/json check.html", category: "tools" },
+         // { name: "Letter Frequency Counter", path: "utility/LetterFrequencyCounter.html", category: "tools" },
+         // { name: "QR and Barcode Creator", path: "barcode/barcode.html", category: "tools" },
+         // { name: "QR Code Generator", path: "Barcode/QR Code Generator.html", category: "tools" },
+         // { name: "Remove comments JS/html", path: "Utility/remove comments.html", category: "tools" },
+         // { name: "Sort Text", path: "Utility/sortText.html", category: "tools" },
+         // { name: "Compress JavaScript function", path: "Utility/FunctionMinify.html", category: "tools" },
+         // { name: "Compress JavaScript to 1 line", path: "Utility/compressJS.html", category: "tools" },
+            { name: "Letter Frequency Counter", path: "utility/LetterFrequencyCounter.html", category: "tools" },
+            { name: "Markdown Viewer", path: "games/markdown-viewer.html", category: "tools" },
+            { name: "Test Data Generator", path: "games/test_data_generator.html", category: "tools" }
+
+        ];
+
+        // Function to generate the menu based on category
+        function generateMenu(category = 'all') {
+            const menu = document.getElementById('gamesMenu');
+            menu.innerHTML = "";
+            
+            // Get filtered items
+            let filteredItems;
+            if (category === 'all') {
+                filteredItems = items;
+            } else {
+                filteredItems = items.filter(item => item.category === category);
+            }
+            
+            // Create categories object to group items
+            const categories = {};
+            filteredItems.forEach(item => {
+                if (!categories[item.category]) {
+                    categories[item.category] = [];
+                }
+                categories[item.category].push(item);
+            });
+            
+            // Create menu sections for each category
+            for (const [category, categoryItems] of Object.entries(categories)) {
+                const categoryContainer = document.createElement('div');
+                categoryContainer.className = 'category-container';
+                
+                // Create category title with first letter uppercase
+                const categoryTitle = document.createElement('h2');
+                categoryTitle.className = 'category-title';
+                categoryTitle.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+                categoryContainer.appendChild(categoryTitle);
+                
+                // Create grid container for items
+                const itemsContainer = document.createElement('div');
+                itemsContainer.className = 'menu-items';
+                
+                // Add items to container
+                categoryItems.forEach(item => {
+                    const menuItem = document.createElement('div');
+                    menuItem.className = `menu-item ${item.category}`;
+                    menuItem.textContent = item.name;
+                    menuItem.onclick = () => {
+                        window.location.href = item.path;
+                    };
+                    itemsContainer.appendChild(menuItem);
+                });
+                
+                categoryContainer.appendChild(itemsContainer);
+                menu.appendChild(categoryContainer);
+            }
+        }
+
+        // Function to filter by category
+        function filterCategory(category) {
+            // Update active tab
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Generate menu with filtered category
+            generateMenu(category);
+        }
+        
+        // Function to implement search
+        function implementSearch() {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                
+                // If search term is empty, reset to showing all items
+                if (searchTerm === '') {
+                    generateMenu('all');
+                    return;
+                }
+                
+                // Filter items based on search term
+                const filteredItems = items.filter(item => 
+                    item.name.toLowerCase().includes(searchTerm)
+                );
+                
+                // Create categories object to group filtered items
+                const categories = {};
+                filteredItems.forEach(item => {
+                    if (!categories[item.category]) {
+                        categories[item.category] = [];
+                    }
+                    categories[item.category].push(item);
+                });
+                
+                // Update menu with filtered items
+                const menu = document.getElementById('gamesMenu');
+                menu.innerHTML = "";
+                
+                // If no results found
+                if (filteredItems.length === 0) {
+                    menu.innerHTML = "<p>No items found matching your search.</p>";
+                    return;
+                }
+                
+                // Create menu sections for each category
+                for (const [category, categoryItems] of Object.entries(categories)) {
+                    const categoryContainer = document.createElement('div');
+                    categoryContainer.className = 'category-container';
+                    
+                    // Create category title with first letter uppercase
+                    const categoryTitle = document.createElement('h2');
+                    categoryTitle.className = 'category-title';
+                    categoryTitle.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+                    categoryContainer.appendChild(categoryTitle);
+                    
+                    // Create grid container for items
+                    const itemsContainer = document.createElement('div');
+                    itemsContainer.className = 'menu-items';
+                    
+                    // Add items to container
+                    categoryItems.forEach(item => {
+                        const menuItem = document.createElement('div');
+                        menuItem.className = `menu-item ${item.category}`;
+                        menuItem.textContent = item.name;
+                        menuItem.onclick = () => {
+                            window.location.href = item.path;
+                        };
+                        itemsContainer.appendChild(menuItem);
+                    });
+                    
+                    categoryContainer.appendChild(itemsContainer);
+                    menu.appendChild(categoryContainer);
+                }
+            });
+        }
+
+        // Generate the menu when the page loads
+        window.onload = function() {
+            generateMenu();
+            implementSearch();
+        };
+    </script>
+</body>
+</html>

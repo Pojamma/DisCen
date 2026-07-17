@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kaleidoscope</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    
+    #canvas-container {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 80%;
+      max-width: 500px;
+      background-color: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .control-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .control-label {
+      min-width: 120px;
+    }
+    
+    input[type="range"] {
+      flex-grow: 1;
+      max-width: 300px;
+    }
+    
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    p {
+      text-align: center;
+      color: #666;
+      max-width: 600px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <h1>Interactive Kaleidoscope</h1>
+  <div id="canvas-container"></div>
+  
+  <div class="controls">
+    <div class="control-row">
+      <span class="control-label">Symmetry:</span>
+      <input type="range" id="symmetry-slider" min="2" max="16" value="8" step="1">
+      <span id="symmetry-value">8</span>
+    </div>
+    
+    <div class="control-row">
+      <span class="control-label">Stroke Width:</span>
+      <input type="range" id="stroke-slider" min="1" max="10" value="4" step="1">
+      <span id="stroke-value">4</span>
+    </div>
+    
+    <div class="control-row">
+      <button id="clear-button">Clear Canvas</button>
+    </div>
+  </div>
+  
+  <p>Click and drag with your mouse or finger to create beautiful kaleidoscope patterns!</p>
+  
+  <script src="/shared/js/p5.min.js"></script>
+  <script>
+    let symmetry = 8;
+    let angle = 360 / symmetry;
+    let lastX, lastY;
+    let lineColor;
+    let strokeWidth = 4;
+    let myCanvas;
+    
+    function setup() {
+      // Create canvas based on screen size (adjust for different devices)
+      const canvasSize = Math.min(windowWidth * 0.9, 800);
+      myCanvas = createCanvas(canvasSize, canvasSize);
+      myCanvas.parent('canvas-container');
+      
+      angleMode(DEGREES);
+      background(0);
+      
+      // Initialize starting color
+      lineColor = color(255, 100, 150);
+      
+      // Set up UI controls
+      const symmetrySlider = document.getElementById('symmetry-slider');
+      const symmetryValue = document.getElementById('symmetry-value');
+      const strokeSlider = document.getElementById('stroke-slider');
+      const strokeValue = document.getElementById('stroke-value');
+      const clearButton = document.getElementById('clear-button');
+      
+      symmetrySlider.addEventListener('input', function() {
+        symmetry = parseInt(this.value);
+        angle = 360 / symmetry;
+        symmetryValue.textContent = symmetry;
+      });
+      
+      strokeSlider.addEventListener('input', function() {
+        strokeWidth = parseInt(this.value);
+        strokeValue.textContent = strokeWidth;
+      });
+      
+      clearButton.addEventListener('click', function() {
+        background(0);
+      });
+    }
+    
+    function draw() {
+      // Translate to center of canvas
+      translate(width / 2, height / 2);
+      
+      // Draw only when mouse is pressed or touch is active
+      if (mouseIsPressed) {
+        // Get mouse coordinates relative to center
+        const mx = mouseX - width / 2;
+        const my = mouseY - height / 2;
+        
+        // Get previous mouse coordinates
+        if (lastX !== undefined && lastY !== undefined) {
+          // Slowly change color based on mouse position and frame count
+          lineColor = color(
+            (frameCount % 255), 
+            (frameCount * 0.5) % 255, 
+            (dist(mx, my, 0, 0) % 255)
+          );
+          
+          // Set stroke properties
+          stroke(lineColor);
+          strokeWeight(strokeWidth);
+          
+          // Draw lines with symmetry
+          for (let i = 0; i < symmetry; i++) {
+            push();
+            rotate(angle * i);
+            line(lastX, lastY, mx, my);
+            pop();
+            
+            // Mirror reflection
+            push();
+            rotate(angle * i + angle / 2);
+            scale(1, -1);
+            line(lastX, lastY, mx, my);
+            pop();
+          }
+        }
+        
+        // Store current mouse position
+        lastX = mx;
+        lastY = my;
+      } else {
+        // Reset last position when mouse is released
+        lastX = undefined;
+        lastY = undefined;
+      }
+    }
+    
+    // Handle touch events for mobile devices
+    function touchMoved() {
+      return false; // Prevents default behavior like scrolling
+    }
+    
+    // Resize canvas when window is resized
+    function windowResized() {
+      const canvasSize = Math.min(windowWidth * 0.9, 800);
+      resizeCanvas(canvasSize, canvasSize);
+    }
+  </script>
+</body>
+</html>

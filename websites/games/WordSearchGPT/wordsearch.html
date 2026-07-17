@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Word Search Game</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			background-image: url('background.webp');
+			background-size: cover;
+			background-position: center;
+			background-repeat: no-repeat;
+			background-attachment: fixed;
+			color: #FFFFFF;
+			text-align: center;
+			padding: 20px;
+		}
+		#word-board {
+			display: grid;
+			grid-template-columns: repeat(14, 40px);
+			grid-template-rows: repeat(10, 40px);
+			gap: 5px;
+			justify-content: center;
+			background-color: #FFFFFF;
+			padding: 10px;
+			touch-action: none;
+			border-radius: 8px;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+			width: fit-content;
+			margin: 0 auto;
+		}
+		.cell {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			width: 40px;
+			height: 40px;
+			color: #000000;
+			background-color: #FFFFFF;
+			border: 0px solid #000000;
+			font-size: 20px;
+			font-weight: bold;
+			/* Add this line to make text bold */
+			cursor: pointer;
+			user-select: none;
+			transition: background-color 0.3s ease;
+		}
+		.highlighted {
+			background-color: rgba(173, 216, 230, 0.6);
+		}
+		#word-list {
+			margin-top: 20px;
+			list-style: none;
+			padding: 0;
+			font-size: 1.5em;
+		}
+		#win-message {
+			font-size: 3em;
+			color: #FFD700;
+			opacity: 0;
+			transition: opacity 2s ease-in-out;
+		}
+		.game-buttons {
+			display: flex;
+			justify-content: center;
+			gap: 10px;
+			margin: 15px 0;
+		}
+		.game-button {
+			padding: 10px 20px;
+			font-size: 1.2em;
+			background-color: #4CAF50;
+			color: white;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			transition: background-color 0.3s;
+		}
+		.game-button:hover {
+			background-color: #45a049;
+		}
+		.game-button:disabled {
+			background-color: #cccccc;
+			cursor: not-allowed;
+		}
+		#hint-button {
+			background-color: #2196F3;
+		}
+		#hint-button:hover {
+			background-color: #0b7dda;
+		}
+		#hint-message {
+			margin-top: 10px;
+			font-size: 1.2em;
+			color: #FFD700;
+			min-height: 1.5em;
+		}
+		.hint-highlight {
+			animation: pulse 1s infinite alternate;
+		}
+@keyframes pulse {
+			0% {
+				background-color: rgba(255, 215, 0, 0.3);
+			}
+			100% {
+				background-color: rgba(255, 215, 0, 0.7);
+			}
+		}
+@keyframes confetti {
+			0% {
+				top: -20px;
+				transform: rotate(0deg);
+			}
+			100% {
+				top: 100vh;
+				transform: rotate(720deg);
+			}
+		}
+
+		.confetti {
+			position: fixed;
+			width: 10px;
+			height: 10px;
+			background-color: #FFD700;
+			top: -20px;
+			z-index: 9999;
+			animation: confetti 3s linear infinite;
+		}
+		/* Add this to your CSS */
+		#word-list-container {
+			background-color: rgba(0, 0, 0, 0.7);
+			/* Semi-transparent black background */
+			border-radius: 10px;
+			padding: 15px;
+			margin: 20px auto;
+			max-width: 80%;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+		}
+
+		#word-list {
+			margin: 0;
+			padding: 0;
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: 10px;
+		}
+
+		#word-list span {
+			display: inline-block;
+			margin: 5px;
+			font-weight: bold;
+		}
+	</style>
+</head>
+<body>
+	<h1>Word Search Game</h1>
+	<div id="word-board"></div>
+	<div class="game-buttons">
+		<button id="start-game-button" class="game-button">Start Game</button>
+		<button id="new-game-button" class="game-button" disabled>New Game</button>
+		<button id="hint-button" class="game-button" disabled>Hint</button>
+	</div>
+	<div id="hint-message"></div>
+	<!-- Wrap your existing word list in this container -->
+	<div id="word-list-container">
+		<ul id="word-list"></ul>
+	</div>
+	<div id="win-message">
+		You Win!
+	</div>
+
+	<audio id="click-sound" src="click.wav"></audio>
+	<audio id="win-sound" src="win.mp3"></audio>
+
+	<script>
+		// Pastel colors for word highlighting
+		const pastelColors = [
+			'rgba(255, 182, 193, 0.6)', // Light Pink
+			'rgba(152, 251, 152, 0.6)', // Pale Green
+			'rgba(173, 216, 230, 0.6)', // Light Blue
+			'rgba(240, 230, 140, 0.6)', // Khaki
+			'rgba(221, 160, 221, 0.6)', // Plum
+			'rgba(255, 239, 213, 0.6)', // Papaya Whip
+			'rgba(176, 224, 230, 0.6)', // Powder Blue
+			'rgba(250, 250, 210, 0.6)', // Light Goldenrod
+			'rgba(245, 222, 179, 0.6)', // Wheat
+			'rgba(224, 255, 255, 0.6)' // Light Cyan
+		];
+
+		// Audio elements
+		let clickSound, winSound;
+		let audioInitialized = false;
+
+		// Game state variables
+		let boardArray = [];
+		let currentWordList = [];
+		let foundWords = [];
+		let wordLocations = {}; // Stores the locations of each word on the board
+		let hintsUsed = 0;
+		let gameStarted = false;
+
+		// Fallback word list in case words.txt fails to load
+		const fallbackWords = [
+			"JAVASCRIPT", "HTML", "CSS", "BROWSER", "WEBSITE",
+			"CODING", "PROGRAM", "FUNCTION", "VARIABLE", "ARRAY",
+			"STRING", "NUMBER", "BOOLEAN", "OBJECT", "METHOD",
+			"LOOP", "CONDITION", "ELEMENT", "DOCUMENT", "EVENT",
+			"BUTTON", "INPUT", "FORM", "STYLE", "CLASS"
+		];
+
+		// Number of words to place in the board
+		const numWords = 30;
+
+		// Difficulty settings
+		const difficulties = {
+			easy: {
+				directions: 2,
+				maxWordLength: 8
+			},
+			// Only horizontal & vertical
+			medium: {
+				directions: 4,
+				maxWordLength: 10
+			},
+			// Add forward diagonals
+			hard: {
+				directions: 8,
+				maxWordLength: 15
+			} // All 8 directions
+		};
+		let difficulty = "medium"; // Default difficulty
+
+		// Direction definitions (0-7)
+		// 0: right, 1: down, 2: down-right, 3: down-left
+		// 4: left, 5: up, 6: up-left, 7: up-right
+		const directionVectors = [{
+			rowDelta: 0,
+			colDelta: 1
+		}, // right
+			{
+				rowDelta: 1,
+				colDelta: 0
+			}, // down
+			{
+				rowDelta: 1,
+				colDelta: 1
+			}, // down-right
+			{
+				rowDelta: 1,
+				colDelta: -1
+			}, // down-left
+			{
+				rowDelta: 0,
+				colDelta: -1
+			}, // left
+			{
+				rowDelta: -1,
+				colDelta: 0
+			}, // up
+			{
+				rowDelta: -1,
+				colDelta: -1
+			}, // up-left
+			{
+				rowDelta: -1,
+				colDelta: 1
+			} // up-right
+		];
+
+		// Element references
+		const startGameButton = document.getElementById('start-game-button');
+		const newGameButton = document.getElementById('new-game-button');
+		const hintButton = document.getElementById('hint-button');
+		const hintMessage = document.getElementById('hint-message');
+
+		// Truly random number generator
+		function getRandomNumber() {
+			return Math.random();
+		}
+
+		// Button event listeners
+		startGameButton.addEventListener('click', () => {
+			initializeAudio();
+			init();
+			startGameButton.style.display = 'none';
+			newGameButton.disabled = false;
+			hintButton.disabled = false;
+			gameStarted = true;
+		});
+
+		// Custom confirmation dialog approach for New Game button
+		newGameButton.addEventListener('click', () => {
+			// Create the confirmation overlay
+			const overlay = document.createElement('div');
+			overlay.style.position = 'fixed';
+			overlay.style.top = '0';
+			overlay.style.left = '0';
+			overlay.style.width = '100%';
+			overlay.style.height = '100%';
+			overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+			overlay.style.display = 'flex';
+			overlay.style.justifyContent = 'center';
+			overlay.style.alignItems = 'center';
+			overlay.style.zIndex = '10000';
+
+			// Create the confirmation box
+			const confirmBox = document.createElement('div');
+			confirmBox.style.backgroundColor = 'white';
+			confirmBox.style.padding = '20px';
+			confirmBox.style.borderRadius = '10px';
+			confirmBox.style.textAlign = 'center';
+			confirmBox.style.maxWidth = '80%';
+
+			// Add the message
+			const message = document.createElement('p');
+			message.textContent = 'Are you sure you want to start a new game? Your current progress will be lost.';
+			message.style.color = 'black';
+			message.style.marginBottom = '20px';
+			message.style.fontSize = '18px';
+			confirmBox.appendChild(message);
+
+			// Create button container
+			const buttonContainer = document.createElement('div');
+			buttonContainer.style.display = 'flex';
+			buttonContainer.style.justifyContent = 'center';
+			buttonContainer.style.gap = '20px';
+
+			// Create Yes button
+			const yesButton = document.createElement('button');
+			yesButton.textContent = 'Yes';
+			yesButton.style.padding = '10px 20px';
+			yesButton.style.backgroundColor = '#4CAF50';
+			yesButton.style.color = 'white';
+			yesButton.style.border = 'none';
+			yesButton.style.borderRadius = '5px';
+			yesButton.style.cursor = 'pointer';
+			yesButton.style.fontSize = '16px';
+			yesButton.addEventListener('click', () => {
+				// Remove the overlay
+				document.body.removeChild(overlay);
+
+				// Reset the game
+				resetGame();
+				init();
+				hintMessage.textContent = '';
+				hintsUsed = 0;
+			});
+
+			// Create No button
+			const noButton = document.createElement('button');
+			noButton.textContent = 'No';
+			noButton.style.padding = '10px 20px';
+			noButton.style.backgroundColor = '#f44336';
+			noButton.style.color = 'white';
+			noButton.style.border = 'none';
+			noButton.style.borderRadius = '5px';
+			noButton.style.cursor = 'pointer';
+			noButton.style.fontSize = '16px';
+			noButton.addEventListener('click', () => {
+				// Just remove the overlay and continue with current game
+				document.body.removeChild(overlay);
+			});
+
+			// Add buttons to container
+			buttonContainer.appendChild(yesButton);
+			buttonContainer.appendChild(noButton);
+			confirmBox.appendChild(buttonContainer);
+
+			// Add confirmation box to overlay
+			overlay.appendChild(confirmBox);
+
+			// Add overlay to the body
+			document.body.appendChild(overlay);
+		});
+
+		hintButton.addEventListener('click', () => {
+			if (!gameStarted) return;
+
+			// Check if there are unfound words
+			const unfoundWords = currentWordList.filter(word => !foundWords.includes(word));
+			if (unfoundWords.length === 0) {
+				hintMessage.textContent = "All words have been found!";
+				return;
+			}
+
+			// Provide a hint
+			provideHint(unfoundWords);
+			hintsUsed++;
+		});
+
+		// Initialize audio elements
+		function initializeAudio() {
+			if (audioInitialized) return;
+
+			clickSound = document.getElementById('click-sound');
+			winSound = document.getElementById('win-sound');
+
+			if (clickSound && winSound) {
+				clickSound.load();
+				winSound.load();
+
+				audioInitialized = true;
+				console.log('Audio initialized');
+			} else {
+				console.error("Failed to initialize audio elements.");
+			}
+		}
+		
+		// Reset game state
+		function resetGame() {
+			// Reset variables
+			boardArray = [];
+			currentWordList = [];
+			foundWords = [];
+			wordLocations = {};
+			hintsUsed = 0;
+
+			// Remove existing event listeners
+			removeTouchListeners();
+
+			// Reset DOM
+			document.getElementById('word-board').innerHTML = '';
+			document.getElementById('word-list').innerHTML = '';
+			document.getElementById('win-message').style.opacity = 0;
+
+			// Remove any highlighted hint cells
+			const highlightedCells = document.querySelectorAll('.hint-highlight');
+			highlightedCells.forEach(cell => {
+				cell.classList.remove('hint-highlight');
+			});
+
+			// Reset ALL cell backgrounds completely
+			const allCells = document.querySelectorAll('.cell');
+			allCells.forEach(cell => {
+				cell.style.backgroundColor = '#FFFFFF';
+				cell.dataset.originalColor = '#FFFFFF';
+			});
+
+			// Clear hint message
+			hintMessage.textContent = '';
+		}
+
+		// New function to remove touch event listeners
+		function removeTouchListeners() {
+			const board = document.getElementById('word-board');
+
+			// Remove all event listeners by cloning and replacing the board
+			const newBoard = board.cloneNode(true);
+			board.parentNode.replaceChild(newBoard, board);
+		}
+
+		// Load words from file or use fallback
+		async function loadWords() {
+			try {
+				const response = await fetch('words.txt');
+				if (!response.ok) {
+					throw new Error(`Failed to load words.txt: ${response.status}`);
+				}
+
+				const text = await response.text();
+				if (!text) {
+					throw new Error('Failed to load words.txt: response was empty');
+				}
+
+				const words = text.split('\n').map(word => word.trim()).filter(word => word.length > 0);
+				if (!words || words.length === 0) {
+					throw new Error('Failed to load words.txt: no words were found');
+				}
+
+				return words;
+			} catch (error) {
+				console.error('Failed to load words.txt:', error);
+				console.log('Using fallback word list instead');
+				return fallbackWords;
+			}
+		}
+
+		// Initialize the game
+		async function init() {
+			const words = await loadWords();
+			const selectedWords = new Set();
+
+			// Apply length filter based on difficulty
+			let filteredWords = words.filter(word =>
+				word.length <= difficulties[difficulty].maxWordLength &&
+				word.length >= 3
+			);
+
+			if (filteredWords.length === 0) {
+				console.error('No words match the length criteria');
+				// Fallback to original words
+				filteredWords = words;
+			}
+
+			// Select random words from the word list
+			while (selectedWords.size < numWords && selectedWords.size < filteredWords.length) {
+				const randomIndex = Math.floor(getRandomNumber() * filteredWords.length);
+				const randomWord = filteredWords[randomIndex].toUpperCase();
+				selectedWords.add(randomWord);
+			}
+
+			// Create the board with the selected words
+			const placedWords = createBoard([...selectedWords]);
+			currentWordList = placedWords;
+
+			// Add touch event listeners
+			addTouchListeners(placedWords);
+
+			// Display stats in console
+			console.log(`Game initialized with ${placedWords.length} words on ${difficulty} difficulty`);
+			console.log(`Words placed: ${placedWords.join(', ')}`);
+		}
+
+		// Create the game board
+		function createBoard(words) {
+			const board = document.getElementById('word-board');
+			const boardRows = 10;
+			const boardCols = 14;
+			boardArray = Array.from(Array(boardRows), () => new Array(boardCols).fill(''));
+			const placedWords = []; // Track successfully placed words
+			wordLocations = {}; // Reset word locations
+
+			// Placement statistics for debugging
+			const placementStats = {
+				successful: [],
+				failed: []
+			};
+
+			// Sort words by length (longest first) to prioritize harder placements
+			const sortedWords = [...words].sort((a, b) => b.length - a.length);
+
+			// Get direction range based on difficulty
+			const directionRange = difficulties[difficulty].directions;
+
+			// Try to place each word on the board
+			sortedWords.forEach(word => {
+				if (!placedWords.includes(word)) {
+					let placed = false;
+
+					// Calculate adaptive attempt limit based on word length and board size
+					const maxAttempts = Math.min(boardRows * boardCols, word.length * 30);
+					let attempts = 0;
+
+					// Store all possible placements with their intersection scores
+					const possiblePlacements = [];
+
+					while (!placed && attempts < maxAttempts) {
+						// Get random direction based on difficulty
+						const direction = Math.floor(getRandomNumber() * directionRange);
+
+						// Calculate safety margin for longer words to avoid edge failures
+						const isHorizontal = (direction === 0 || direction === 4); // right or left
+						const isVertical = (direction === 1 || direction === 5); // down or up
+
+						let rowSafetyMargin = 0;
+						let colSafetyMargin = 0;
+
+						// Apply direction-specific bounds
+						if (direction === 0) {
+							// right
+							colSafetyMargin = word.length - 1;
+						} else if (direction === 1) {
+							// down
+							rowSafetyMargin = word.length - 1;
+						} else if (direction === 2) {
+							// down-right
+							rowSafetyMargin = word.length - 1;
+							colSafetyMargin = word.length - 1;
+						} else if (direction === 3) {
+							// down-left
+							rowSafetyMargin = word.length - 1;
+							colSafetyMargin = 0;
+						} else if (direction === 4) {
+							// left
+							colSafetyMargin = 0;
+						} else if (direction === 5) {
+							// up
+							rowSafetyMargin = 0;
+						} else if (direction === 6) {
+							// up-left
+							rowSafetyMargin = 0;
+							colSafetyMargin = 0;
+						} else if (direction === 7) {
+							// up-right
+							rowSafetyMargin = 0;
+							colSafetyMargin = word.length - 1;
+						}
+
+						// Get start position with safety margins
+						const startRow = Math.floor(getRandomNumber() * (boardRows - rowSafetyMargin));
+						const startCol = Math.floor(getRandomNumber() * (boardCols - colSafetyMargin));
+
+						// Check if placement is valid and get intersection info
+						const placementInfo = canPlaceWord(word, startRow, startCol, direction, boardArray);
+
+						if (placementInfo.canPlace) {
+							// Store valid placement with its intersection score
+							possiblePlacements.push({
+								row: startRow,
+								col: startCol,
+								direction: direction,
+								intersections: placementInfo.intersections
+							});
+
+							// If we found enough possible placements, stop searching
+							if (possiblePlacements.length >= 5) {
+								break;
+							}
+						}
+
+						attempts++;
+					}
+
+					// If we found any valid placements
+					if (possiblePlacements.length > 0) {
+						// Sort by most intersections (prefer words that share letters)
+						possiblePlacements.sort((a, b) => b.intersections - a.intersections);
+
+						// Use the placement with the most intersections (or random one of top 3)
+						const placementIndex = (possiblePlacements.length >= 3) ?
+						Math.floor(getRandomNumber() * 3): 0;
+
+						const placement = possiblePlacements[placementIndex];
+
+						// Place the word
+						const locations = placeWord(
+							word,
+							placement.row,
+							placement.col,
+							placement.direction,
+							boardArray
+						);
+
+						placed = true;
+						placedWords.push(word);
+
+						// Store word locations for hints
+						wordLocations[word] = {
+							direction: placement.direction,
+							directionName: getDirectionName(placement.direction),
+							cells: locations
+						};
+
+						// Record statistics
+						placementStats.successful.push({
+							word: word,
+							attempts: attempts,
+							intersections: placement.intersections
+						});
+					} else {
+						// Could not place the word
+						placementStats.failed.push({
+							word: word,
+							attempts: attempts
+						});
+					}
+				}
+			});
+
+			console.log('Placed words:',
+				placedWords);
+			console.log('Placement stats:',
+				placementStats);
+
+			// Fill empty cells with random letters
+			for (let i = 0; i < boardRows; i++) {
+				for (let j = 0; j < boardCols; j++) {
+					if (boardArray[i][j] === '') {
+						boardArray[i][j] = String.fromCharCode(65 + Math.floor(getRandomNumber() * 26));
+					}
+				}
+			}
+
+			// Create the HTML elements for the board
+			board.innerHTML = '';
+			boardArray.forEach((row, rowIndex) => {
+				row.forEach((letter, colIndex) => {
+					const cell = document.createElement('div');
+					cell.classList.add('cell');
+					cell.textContent = letter;
+					cell.dataset.row = rowIndex;
+					cell.dataset.col = colIndex;
+					cell.dataset.originalColor = '#FFFFFF';
+					board.appendChild(cell);
+				});
+			});
+
+			// Display the word list
+			displayWordList(placedWords);
+
+			return placedWords; // Return only the words that were successfully placed
+		}
+
+		// Helper function to get direction name
+		function getDirectionName(direction) {
+			const directionNames = [
+				"right",
+				"down",
+				"down-right",
+				"down-left",
+				"left",
+				"up",
+				"up-left",
+				"up-right"
+			];
+			return directionNames[direction] || "unknown";
+		}
+
+		// Check if a word can be placed at the given position and direction
+		function canPlaceWord(word, row, col, direction, board) {
+			// Get direction vector
+			const vector = directionVectors[direction];
+			if (!vector) return {
+				canPlace: false,
+				intersections: 0
+			};
+
+			const rowDelta = vector.rowDelta;
+			const colDelta = vector.colDelta;
+
+			// Check if word will fit on board
+			for (let i = 0; i < word.length; i++) {
+				const newRow = row + (rowDelta * i);
+				const newCol = col + (colDelta * i);
+
+				// Check bounds
+				if (newRow < 0 || newRow >= board.length ||
+					newCol < 0 || newCol >= board[0].length) {
+					return {
+						canPlace: false,
+						intersections: 0
+					};
+				}
+			}
+
+			// Check if word can be placed and count intersections
+			let intersections = 0;
+
+			for (let i = 0; i < word.length; i++) {
+				const newRow = row + (rowDelta * i);
+				const newCol = col + (colDelta * i);
+
+				// If cell is not empty, check if letters match
+				if (board[newRow][newCol] !== '') {
+					if (board[newRow][newCol] === word[i]) {
+						// Letters match - this is an intersection
+						intersections++;
+					} else {
+						// Letters don't match - can't place here
+						return {
+							canPlace: false,
+							intersections: 0
+						};
+					}
+				}
+			}
+
+			return {
+				canPlace: true,
+				intersections: intersections
+			};
+		}
+
+		// Place a word on the board and return cell locations
+		function placeWord(word, row, col, direction, board) {
+			const locations = [];
+
+			// Get direction vector
+			const vector = directionVectors[direction];
+			const rowDelta = vector.rowDelta;
+			const colDelta = vector.colDelta;
+
+			for (let i = 0; i < word.length; i++) {
+				const newRow = row + (rowDelta * i);
+				const newCol = col + (colDelta * i);
+
+				board[newRow][newCol] = word[i];
+				locations.push({
+					row: newRow, col: newCol
+				});
+			}
+
+			console.log('Placed word:', word, 'at row:', row, 'col:', col, 'direction:', getDirectionName(direction));
+			return locations;
+		}
+
+		// Display the word list
+		function displayWordList(words) {
+			const wordList = document.getElementById('word-list');
+			wordList.innerHTML = '';
+
+			words.forEach(word => {
+				const span = document.createElement('span');
+				span.textContent = word + '  ';
+				span.dataset.word = word;
+				wordList.appendChild(span);
+			});
+		}
+
+		// Mark a word as found in the word list
+		function markWordAsFound(word) {
+			const wordElements = document.querySelectorAll('#word-list span');
+
+			wordElements.forEach(span => {
+				if (span.dataset.word === word) {
+					span.style.textDecoration = 'line-through';
+					span.style.opacity = '0.5';
+				}
+			});
+		}
+
+		// Provide a hint to the player
+		function provideHint(unfoundWords) {
+			// Remove any previous hint highlights
+			const highlightedCells = document.querySelectorAll('.hint-highlight');
+			highlightedCells.forEach(cell => {
+				cell.classList.remove('hint-highlight');
+			});
+
+			// Select a random unfound word
+			const randomIndex = Math.floor(getRandomNumber() * unfoundWords.length);
+			const wordToHint = unfoundWords[randomIndex];
+
+			// Get the word's location information
+			const wordInfo = wordLocations[wordToHint];
+
+			// Different types of hints
+			const hintTypes = [
+				// Hint first letter
+				() => {
+					const firstCellPos = wordInfo.cells[0];
+					const firstCell = document.querySelector(`.cell[data-row="${firstCellPos.row}"][data-col="${firstCellPos.col}"]`);
+					if (firstCell) {
+						firstCell.classList.add('hint-highlight');
+					}
+					hintMessage.textContent = `Look for the first letter of "${wordToHint}"`;
+				},
+
+				// Hint direction
+				() => {
+					hintMessage.textContent = `The word "${wordToHint}" is placed in the ${wordInfo.directionName} direction`;
+				},
+
+				// Hint length
+				() => {
+					hintMessage.textContent = `Find a ${wordToHint.length}-letter word`;
+				},
+
+				// Hint area (highlight first and last letter)
+				() => {
+					const firstCellPos = wordInfo.cells[0];
+					const lastCellPos = wordInfo.cells[wordInfo.cells.length - 1];
+
+					const firstCell = document.querySelector(`.cell[data-row="${firstCellPos.row}"][data-col="${firstCellPos.col}"]`);
+					const lastCell = document.querySelector(`.cell[data-row="${lastCellPos.row}"][data-col="${lastCellPos.col}"]`);
+
+					if (firstCell && lastCell) {
+						firstCell.classList.add('hint-highlight');
+						lastCell.classList.add('hint-highlight');
+					}
+
+					hintMessage.textContent = `The word "${wordToHint}" starts and ends at the highlighted cells`;
+				},
+
+				// Hint middle letter
+				() => {
+					const middleIndex = Math.floor(wordInfo.cells.length / 2);
+					const middleCellPos = wordInfo.cells[middleIndex];
+
+					const middleCell = document.querySelector(`.cell[data-row="${middleCellPos.row}"][data-col="${middleCellPos.col}"]`);
+
+					if (middleCell) {
+						middleCell.classList.add('hint-highlight');
+					}
+
+					hintMessage.textContent = `The word "${wordToHint}" passes through this letter`;
+				},
+
+				// Hint word category (first letter)
+				() => {
+					hintMessage.textContent = `Look for a word that starts with "${wordToHint[0]}"`;
+				}];
+
+			// Select a hint type based on how many hints have been used
+			const hintType = hintsUsed % hintTypes.length;
+			hintTypes[hintType]();
+		}
+
+		// Add difficulty selector
+		function addDifficultySelector() {
+			const difficultyContainer = document.createElement('div');
+			difficultyContainer.className = 'game-buttons';
+			difficultyContainer.style.marginBottom = '10px';
+
+			const label = document.createElement('label');
+			label.textContent = 'Difficulty: ';
+			label.style.color = 'white';
+			label.style.marginRight = '10px';
+
+			const select = document.createElement('select');
+			select.id = 'difficulty-select';
+			select.style.padding = '5px';
+			select.style.borderRadius = '5px';
+
+			const options = [{
+				value: 'easy',
+				text: 'Easy'
+			},
+				{
+					value: 'medium',
+					text: 'Medium'
+				},
+				{
+					value: 'hard',
+					text: 'Hard'
+				}];
+
+			options.forEach(option => {
+				const optionEl = document.createElement('option');
+				optionEl.value = option.value;
+				optionEl.textContent = option.text;
+				if (option.value === difficulty) {
+					optionEl.selected = true;
+				}
+				select.appendChild(optionEl);
+			});
+
+			select.addEventListener('change',
+				(e) => {
+					difficulty = e.target.value;
+					console.log('Difficulty set to:', difficulty);
+				});
+
+			difficultyContainer.appendChild(label);
+			difficultyContainer.appendChild(select);
+
+			// Insert before the game board
+			const gameBoard = document.getElementById('word-board');
+			document.body.insertBefore(difficultyContainer,
+				gameBoard);
+		}
+
+		// Call once when page loads
+		addDifficultySelector();
+
+		// Add touch event listeners to the board
+		function addTouchListeners(words) {
+			const board = document.getElementById('word-board');
+			let isDragging = false;
+			let selectedCells = [];
+			let startDirection = null;
+			let currentColorIndex = 0;
+
+			// Touch start event
+			board.addEventListener('touchstart',
+				(e) => {
+					e.preventDefault();
+					isDragging = true;
+					selectedCells = []; // Clear previously selected cells
+
+					const touch = e.touches[0];
+					const targetCell = document.elementFromPoint(touch.clientX, touch.clientY);
+
+					if (targetCell && targetCell.classList.contains('cell')) {
+						selectedCells.push(targetCell);
+						targetCell.dataset.originalColor = targetCell.style.backgroundColor;
+						targetCell.style.backgroundColor = pastelColors[currentColorIndex];
+					}
+				});
+
+			// Touch move event
+			board.addEventListener('touchmove',
+				(e) => {
+					if (!isDragging) return;
+
+					e.preventDefault();
+					const touch = e.touches[0];
+					const targetCell = document.elementFromPoint(touch.clientX, touch.clientY);
+
+					if (targetCell && targetCell.classList.contains('cell')) {
+						// Handle backtracking
+						if (selectedCells.length > 1 && targetCell === selectedCells[selectedCells.length - 2]) {
+							const removedCell = selectedCells.pop();
+							removedCell.style.backgroundColor = removedCell.dataset.originalColor;
+							return;
+						}
+
+						// Add new cell if not already selected
+						if (!selectedCells.includes(targetCell)) {
+							// Make sure we have at least one cell selected
+							if (selectedCells.length === 0) {
+								selectedCells.push(targetCell);
+								targetCell.dataset.originalColor = targetCell.style.backgroundColor;
+								targetCell.style.backgroundColor = pastelColors[currentColorIndex];
+								return;
+							}
+
+							const lastCell = selectedCells[selectedCells.length - 1];
+
+							// Verify lastCell is valid before proceeding
+							if (!lastCell || !lastCell.dataset) {
+								console.warn("Invalid last cell", lastCell);
+								return;
+							}
+
+							const direction = getDirection(lastCell, targetCell);
+
+							// Only proceed if we got a valid direction
+							if (direction) {
+								// Set direction on first movement
+								if (!startDirection) {
+									startDirection = direction;
+								}
+
+								// Only allow cells in the same direction
+								if (direction === startDirection) {
+									selectedCells.push(targetCell);
+									targetCell.dataset.originalColor = targetCell.style.backgroundColor;
+									targetCell.style.backgroundColor = pastelColors[currentColorIndex];
+
+									// Check if word is complete as we drag
+									checkForCompleteWord();
+								}
+							}
+						}
+					}
+				});
+
+			// Function to check if current selection forms a complete word
+			function checkForCompleteWord() {
+				const selectedWord = selectedCells.map(cell => cell.textContent).join('');
+				const reversedWord = selectedWord.split('').reverse().join('');
+
+				// Check if word is in the list
+				let foundForward = words.includes(selectedWord);
+				let foundReversed = words.includes(reversedWord);
+
+				if ((foundForward || foundReversed) && selectedCells.length > 1) {
+					// Word found!
+					const foundWord = foundForward ? selectedWord: reversedWord;
+
+					// Don't count if already found
+					if (foundWords.includes(foundWord)) {
+						return;
+					}
+
+					// Play sound
+					if (audioInitialized) {
+						try {
+							clickSound.play().catch(error => console.error("Click sound playback error: ", error));
+						} catch (error) {
+							console.error("Error playing click sound: ", error);
+						}
+					}
+
+					// Highlight the word permanently
+					highlightWord(selectedCells);
+
+					// Mark as found
+					foundWords.push(foundWord);
+					markWordAsFound(foundWord);
+
+					// Update color for next word
+					currentColorIndex = (currentColorIndex + 1) % pastelColors.length;
+
+					// Reset selection after finding a word
+					selectedCells = [];
+					startDirection = null;
+
+					// Clear any hint message
+					hintMessage.textContent = '';
+
+					// Check for win
+					if (foundWords.length === words.length) {
+						triggerWinAnimation();
+
+						if (audioInitialized) {
+							winSound.play().catch(error => console.error("Win sound playback error: ", error));
+						}
+
+						document.getElementById('win-message').style.opacity = 1;
+					}
+				}
+			}
+
+			// Touch end event
+			board.addEventListener('touchend', () => {
+				if (!isDragging) {
+					return;
+				}
+
+				isDragging = false;
+
+				// If no word was found during dragging, reset the selection
+				if (selectedCells.length > 0) {
+					// Check if we found a word (if found, the cells will already be properly highlighted)
+					const selectedWord = selectedCells.map(cell => cell.textContent).join('');
+					const foundThisWord = foundWords.includes(selectedWord) ||
+					foundWords.includes(selectedWord.split('').reverse().join(''));
+
+					if (!foundThisWord) {
+						// Only reset colors if we didn't find a word
+						selectedCells.forEach(cell => {
+							if (cell && cell.dataset && cell.dataset.originalColor) {
+								cell.style.backgroundColor = cell.dataset.originalColor;
+							} else {
+								// Fallback to white if dataset is missing
+								cell.style.backgroundColor = '#FFFFFF';
+							}
+						});
+					}
+				}
+
+				// Reset for next selection
+				selectedCells = [];
+				startDirection = null;
+			});
+
+			// Get direction between two cells
+			function getDirection(cellA, cellB) {
+				// Add null checks to prevent errors
+				if (!cellA || !cellB || !cellA.dataset || !cellB.dataset) {
+					console.warn("Invalid cells passed to getDirection", cellA, cellB);
+					return null;
+				}
+
+				// Make sure dataset properties exist
+				if (!('row' in cellA.dataset) || !('col' in cellA.dataset) ||
+					!('row' in cellB.dataset) || !('col' in cellB.dataset)) {
+					console.warn("Missing dataset properties in cells", cellA.dataset, cellB.dataset);
+					return null;
+				}
+
+				const rowA = parseInt(cellA.dataset.row);
+				const colA = parseInt(cellA.dataset.col);
+				const rowB = parseInt(cellB.dataset.row);
+				const colB = parseInt(cellB.dataset.col);
+
+				// Check for NaN values
+				if (isNaN(rowA) || isNaN(colA) || isNaN(rowB) || isNaN(colB)) {
+					console.warn("Invalid cell coordinates", rowA, colA, rowB, colB);
+					return null;
+				}
+
+				// Calculate deltas
+				const rowDelta = rowB - rowA;
+				const colDelta = colB - colA;
+
+				// Check straight lines first
+				if (rowDelta === 0 && colDelta !== 0) {
+					return 'horizontal';
+				} else if (colDelta === 0 && rowDelta !== 0) {
+					return 'vertical';
+				}
+				// Now check diagonals
+				else if (Math.abs(rowDelta) === Math.abs(colDelta)) {
+					return 'diagonal';
+				}
+
+				return null;
+			}
+
+			// Highlight a word permanently
+			function highlightWord(cells) {
+				const currentColor = pastelColors[currentColorIndex];
+				cells.forEach(cell => {
+					if (cell && cell.style) {
+						cell.style.backgroundColor = currentColor;
+						// Update the original color to be the highlight color
+						// so it stays highlighted even after selection is cleared
+						cell.dataset.originalColor = currentColor;
+					}
+				});
+			}
+		}
+
+		function triggerWinAnimation() {
+			// Remove any existing confetti first
+			const oldConfetti = document.querySelectorAll('.confetti');
+			oldConfetti.forEach(el => el.remove());
+
+			// Create new confetti
+			for (let i = 0; i < 100; i++) {
+				const confetti = document.createElement('div');
+				confetti.classList.add('confetti');
+
+				// Randomly position across the full screen width
+				confetti.style.left = Math.random() * window.innerWidth + 'px';
+
+				// Random colors
+				confetti.style.backgroundColor = pastelColors[Math.floor(Math.random() * pastelColors.length)];
+
+				// Vary the animation speed
+				confetti.style.animationDuration = (2 + Math.random() * 4) + 's';
+
+				// Add to document body
+				document.body.appendChild(confetti);
+
+				// Remove after animation completes
+				setTimeout(() => {
+					if (document.body.contains(confetti)) {
+						document.body.removeChild(confetti);
+					}
+				},
+					5000);
+			}
+		}
+	</script>
+</body>
+</html>

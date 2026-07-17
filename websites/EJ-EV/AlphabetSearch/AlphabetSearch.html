@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--   Bob Robles 2023                -->
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<title>Alphabet Highlighter</title>
+	<!-- Add CSS link here if needed -->
+	<style>
+		body {
+			font-family: 'Arial', sans-serif;
+			background-color: #f4f3ef;
+			/* Soft brown/cream background */
+			color: #5a3d2b;
+			/* Dark brown text for contrast */
+			background-image: url('background.jpg');
+			/* Path to your background image */
+			background-size: cover;
+			/* Cover the entire viewport */
+			background-repeat: no-repeat;
+			/* Prevent repeating the image */
+			background-position: center;
+			/* Center the image */
+
+		}
+		h1 {
+			color: #8c6b4c;
+			text-align: center;
+			background-color: rgba(255, 255, 255, 0.5);
+			padding: 10px;
+			max-width: 50%;
+			margin: 10px auto;
+			border-radius: 10px;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			font-family: 'Arial', sans-serif;
+		}
+		h1 {
+			font-family: 'Permanent Marker', cursive;
+			text-align: center;
+			color: #8c6b4c;
+		}
+
+
+		#alphabetBar {
+			background-color: #8c6b4c;
+			/* Medium brown */
+			display: flex;
+			flex-wrap: wrap;
+			/* Allows alphabet to fit in 1 or 2 lines */
+			justify-content: center;
+			padding: 5px;
+		}
+
+		#alphabetBar span {
+			font-size: 20px;
+			/* Large, easy-to-read font */
+			cursor: pointer;
+			padding: 1px 1.8px;
+			margin: 4px;
+			border-radius: 5px;
+			background-color: #8c6b4c;
+			/* Darker brown */
+			color: white;
+			/* Dark brown text */
+		}
+		#alphabetBar span:nth-child(even) {
+			margin-right: 10px;
+			/* Adjust the space as needed */
+		}
+		#storyText {
+			font-size: 36px;
+			/* Large text for the story */
+			background-color: rgba(255, 255, 255, 0.8);
+
+			margin: 5px;
+			padding: 5px;
+			border: 4px solid #a67c52;
+			/* Medium brown border */
+			border-radius: 10px;
+		}
+
+		#buttonContainer {
+			text-align: center;
+			margin: 20px 0;
+		}
+
+		button {
+			font-size: 24px;
+			padding: 10px 20px;
+			margin: 5px;
+			/* Small margin for spacing between buttons */
+			border: none;
+			border-radius: 5px;
+			background-color: #8c6b4c;
+			/* Darker brown */
+			color: white;
+			cursor: pointer;
+			transition: background-color 0.3s;
+		}
+
+		button:hover {
+			background-color: #a67c52;
+			/* Medium brown on hover */
+		}
+
+		.highlight {
+			background-color: yellow;
+		}
+
+	</style>
+	<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
+
+</head>
+<body>
+	<br><br>
+	<br><br>
+	<h1 id="userGreeting">Alphabet</h1>
+
+
+	<div id="alphabetBar"></div>
+	<br>
+	<p id="storyText">
+	</p>
+	<div id="buttonContainer">
+		<button id="speakStory">Read Story</button>
+		<button id="changeStory">Next Story</button>
+	</div>
+
+	<script>
+		//	"Aa  Bb  Cc  Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz"
+
+		let stories = [
+			"Baby Shark's Underwater Party. Deep in the ocean, Baby Shark was excited for his birthday. Daddy Shark and Mommy Shark helped decorate a coral palace with seaweed streamers and shiny shells. Friends like Tiny Turtle, Octopus Olivia, and Funny Fish joined the party, playing games like hide-and-swim and singing cheerful songs. They all danced the famous 'Baby Shark' dance, making swishy moves with their fins. The party ended with a delicious plankton cake, leaving everyone smiling and happy.",
+			"Baby Shark's Treasure Hunt. One sunny morning, Baby Shark found a mysterious map inside a clamshell. It showed a path to a hidden treasure! Along with his friends, he swam through wavy seaweed forests and past colorful coral reefs. They solved riddles and followed clues, like following the singing seahorses and counting bright starfish. At last, they found the treasure chest, filled with shiny pearls and glittering gems. They shared the treasure with all their sea friends, making it the best adventure ever!",
+			"Bluey's Beach Adventure. In the sunny town of Brisbane, Bluey and her little sister Bingo decided to build the biggest sandcastle ever at the beach. With shovels and buckets, they worked together, laughing and making up stories about sea dragons and mermaids living in their castle. Dad joined in, pretending to be a friendly crab, while Mum organized a delicious picnic. As the sun set, they all watched the waves gently wash the castle away, promising to build an even bigger one next time.",
+			"Bluey's Balloon Day. One windy day, Bluey and her family went to the park for a special balloon festival. Colorful balloons floated in the sky like giant jellybeans. Bluey and Bingo jumped with joy when they each received a balloon shaped like their favorite animals. They played fun games, like tag and hide-and-seek, with their balloons following them like floaty friends. As they headed home, they let their balloons go, waving as they soared up high, making wishes for them to reach the stars.",
+			"Amy's Magical Garden. Amy loved her magic garden, where every flower quietly whispered secrets and butterflies and zebras danced. She sat on an old box and played with her fluffy cat, Bella, under the big, friendly tree. One sunny day, Amy found a sparkling, hidden path leading to a treasure chest filled with shiny gems and funny hats. Just what she wanted.",
+			"Lily's Starry Backyard Adventure. On a clear night, Lily and her teddy bear, Mr. Snuggles, went on an adventure in her backyard. They saw stars twinkling like a box of diamonds and a smiling moon. Lily made a wish upon a shooting star to fly like a bird. Suddenly, a gentle breeze lifted them, and they soared through the starry sky, laughing quite joyfully.",
+			"The Quest of Xavier and Yolanda. Xena's Alphabetical Zoo Adventure. Quick brown foxes jump over lazy dogs near the zoo. Vexed hyenas laugh as brave kitty meows. Xena, a young girl, gazes with joy at every animal. Unicorns, thought to be fictional, surprise visitors. Penguins waddle, and quails zip under ivy-covered trees.",
+			"In a mystical forest, Xavier the fox met a quirky zebra named Yolanda. They embarked on a quest to find the legendary unicorn. Along the way, they saw vibrant birds, koalas, and a jovial bear playing a xylophone. Giggling, they picked quinces and ate vanilla ice cream under a huge oak.",
+			"Captain Zoe's Ocean Voyage. Captain Zoe and her quirky parrot, Max, voyaged across the vast ocean. They found a mysterious box under a jade tree. Inside were yellow maps leading to a treasure on Xanadu Island. Navigating through icy waters, they passed quacking ducks and laughing whales, braving every challenge.",
+			"Astronaut Zara's Journey to QuixarYoung astronaut Zara voyaged to planet Quixar, excited about the unique adventure. She observed vibrant galaxies and met friendly alien kangaroos. Buzzing in her spaceship, Zara examined quirky plants and cosmic dust, jotting down notes. The journey filled her heart with joy and wonder.",
+			"The Enchanted Carnival Adventure. Violet and her brother, Jake, visited an enchanted carnival. Quirky clowns juggled while exotic birds sang. A mysterious wizard performed magic tricks, and xylophones played whimsical tunes. Zebras with colorful stripes raced in a maze. It was a joyous day filled with laughter and fun.",
+			"Rosie the Rainbow Unicorn. In a colorful world lived a rainbow unicorn named Rosie. She loved jumping over glittering streams filled with quacking ducks and racing with the wind. One day, Rosie found a lost, tiny bird with a broken wing.  She wondered if it was from the zoo. With a gentle touch and a warm hug, Rosie helped the bird feel better. They became the best friends, exploring the world together."
+		];
+		let currentStory = 0;
+
+
+		displayUserName();
+
+		// ===== functions =====
+
+		function getUserInfoFromURL() {
+			const params = new URLSearchParams(window.location.search);
+			return {
+				userName: params.get('user'),
+				nickname: params.get('nickname')
+			};
+		}
+
+		function displayUserName() {
+			const userInfo = getUserInfoFromURL();
+			if (userInfo.userName) {
+				document.getElementById('userGreeting').innerHTML = 'Hello ' + userInfo.nickname + '<br> Welcome to the Alphabet Search!';
+			}
+		}
+
+		// ===== Event listeners =====
+
+		document.addEventListener("DOMContentLoaded", function() {
+			const alphabet1 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+			const alphabet = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz';
+			const alphabetBar = document.getElementById('alphabetBar');
+			const storyText = document.getElementById('storyText');
+
+			// Populating the alphabet bar
+			alphabet.split('').forEach(letter => {
+				let span = document.createElement('span');
+				span.innerText = letter;
+				span.onclick = function() {
+					highlightLetter(letter);
+				};
+				alphabetBar.appendChild(span);
+			});
+
+			document.getElementById('changeStory').addEventListener('click', function() {
+				currentStory = (currentStory + 1) % stories.length;
+				storyText.innerText = stories[currentStory];
+			});
+
+			document.getElementById('speakStory').addEventListener('click', function() {
+				let speech = new SpeechSynthesisUtterance(stories[currentStory]);
+				window.speechSynthesis.speak(speech);
+			});
+
+			// Initialize with the first story
+			storyText.innerText = stories[currentStory];
+
+			// Function to highlight the letter
+			function highlightLetter(letter) {
+				// Reset previous highlights
+				storyText.innerHTML = storyText.innerHTML.replace(/<mark>/g, '').replace(/<\/mark>/g, '');
+
+				// Highlight new letter
+				let regex = new RegExp(letter, 'gi');
+				storyText.innerHTML = storyText.innerHTML.replace(regex, '<mark>$&</mark>');
+
+				// Count occurrences of the letter
+				let count = (storyText.innerText.match(regex) || []).length;
+				speakLetter(letter)
+				speakLetterWithCount(letter, count);
+			}
+			function speakLetter(letter) {
+				let speech = new SpeechSynthesisUtterance(letter);
+				window.speechSynthesis.speak(speech);
+			}
+			// Function to speak the letter and its count
+			function speakLetterWithCount(letter, count) {
+				let message = count > 0 ? `There are ${count} ${letter}'s`: `There are no ${letter}'s`;
+				let speech = new SpeechSynthesisUtterance(message);
+				window.speechSynthesis.speak(speech);
+			}
+		});
+
+	</script>
+</body>
+
+</html>

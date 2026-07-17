@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Letter Frequency Counter</title>
+    <style>
+        .not-used {
+            color: red;
+        }
+        #textInput {
+            width: 80%;
+            height: 250px;
+        }
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 5px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h2>Letter Frequency Counter</h2>
+    <textarea id="textInput"></textarea><br>
+    <button onclick="countLetters()">Count Letters</button>
+    <button onclick="copyToClipboard()">Copy to Clipboard</button>
+    <h3>Letter Count:</h3>
+    <table id="resultTable">
+        <tr>
+            <th>Letter</th>
+            <th>Count</th>
+        </tr>
+    </table>
+
+    <script>
+        function countLetters() {
+            let text = document.getElementById('textInput').value.toLowerCase();
+            let counts = {};
+            let alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+
+            alphabet.forEach(letter => {
+                counts[letter] = 0;
+            });
+
+            for (let char of text) {
+                if (alphabet.includes(char)) {
+                    counts[char]++;
+                }
+            }
+
+            displayResults(counts);
+        }
+
+        function displayResults(counts) {
+            let resultTable = document.getElementById('resultTable');
+            
+            // Clear previous results except the header
+            resultTable.innerHTML = '<tr><th>Letter</th><th>Count</th></tr>';
+
+            for (let letter in counts) {
+                let row = resultTable.insertRow(-1);
+                let cell1 = row.insertCell(0);
+                let cell2 = row.insertCell(1);
+                cell1.textContent = letter.toUpperCase();
+                cell2.textContent = counts[letter];
+                
+                if (counts[letter] === 0) {
+                    cell1.classList.add('not-used');
+                    cell2.classList.add('not-used');
+                }
+            }
+        }
+
+        function copyToClipboard() {
+            let text = document.getElementById('textInput');
+            text.select();
+            document.execCommand('copy');
+        }
+    </script>
+</body>
+</html>

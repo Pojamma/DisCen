@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--   Bob Robles 2023                -->
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+  <title>Alphabet Highlighter</title>
+  <!-- Add CSS link here if needed -->
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f4f3ef;
+      /* Soft brown/cream background */
+      color: #5a3d2b;
+      /* Dark brown text for contrast */
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      background-color: rgba(255, 255, 255, 0.7);
+      padding: 10px;
+      max-width: 90%;
+      margin: 10px auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-family: 'Arial', sans-serif;
+    }
+    h1 {
+      font-family: 'Permanent Marker', cursive;
+      text-align: center;
+      color: #333;
+    }
+
+
+    #alphabetBar {
+      background-color: #a67c52;
+      /* Medium brown */
+      display: flex;
+      flex-wrap: wrap;
+      /* Allows alphabet to fit in 1 or 2 lines */
+      justify-content: center;
+      padding: 5px;
+    }
+
+    #alphabetBar span {
+      font-size: 18px;
+      /* Large, easy-to-read font */
+      cursor: pointer;
+      padding: 1px 1.5px;
+      margin: 4px;
+      border-radius: 5px;
+      background-color: #d3b8a6;
+      /* Light brown */
+      color: #5a3d2b;
+      /* Dark brown text */
+    }
+
+    #storyText {
+      font-size: 26px;
+      /* Large text for the story */
+      margin: 5px;
+      padding: 5px;
+      border: 2px solid #a67c52;
+      /* Medium brown border */
+      border-radius: 10px;
+    }
+
+    #buttonContainer {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    button {
+      font-size: 18px;
+      padding: 10px 20px;
+      margin: 5px;
+      /* Small margin for spacing between buttons */
+      border: none;
+      border-radius: 5px;
+      background-color: #8c6b4c;
+      /* Darker brown */
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #a67c52;
+      /* Medium brown on hover */
+    }
+
+    .highlight {
+      background-color: yellow;
+    }
+
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
+
+</head>
+<body>
+  <h1 id="userGreeting">Alphabet</h1>
+
+  <div id="buttonContainer">
+    <button id="changeStory">Next Story</button>
+    <button id="speakStory">Read Story</button>
+  </div>
+
+  <div id="alphabetBar">
+  </div>
+  <p id="storyText">
+  </p>
+// "Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz"
+
+  <script>
+    let stories = [
+      "Amy loved her magic garden, where every flower quietly whispered secrets and butterflies and zebras danced. She sat on an old box and played with her fluffy cat, Bella, under the big, friendly tree. One sunny day, Amy found a sparkling, hidden path leading to a treasure chest filled with shiny gems and funny hats. Just what she wanted.",
+      "On a clear night, Lily and her teddy bear, Mr. Snuggles, went on an adventure in her backyard. They saw stars twinkling like a box of diamonds and a smiling moon. Lily made a wish upon a shooting star to fly like a bird. Suddenly, a gentle breeze lifted them, and they soared through the starry sky, laughing quite joyfully.",
+       "Quick brown foxes jump over lazy dogs near the zoo. Vexed hyenas laugh as brave kitty meows. Xena, a young girl, gazes with joy at every animal. Unicorns, thought to be fictional, surprise visitors. Penguins waddle, and quails zip under ivy-covered trees.",
+      "In a mystical forest, Xavier the fox met a quirky zebra named Yolanda. They embarked on a quest to find the legendary unicorn. Along the way, they saw vibrant birds, koalas, and a jovial bear playing a xylophone. Giggling, they picked quinces and ate vanilla ice cream under a huge oak.",
+      "Captain Zoe and her quirky parrot, Max, voyaged across the vast ocean. They found a mysterious box under a jade tree. Inside were yellow maps leading to a treasure on Xanadu Island. Navigating through icy waters, they passed quacking ducks and laughing whales, braving every challenge.",
+      "Young astronaut Zara voyaged to planet Quixar, excited about the unique adventure. She observed vibrant galaxies and met friendly alien kangaroos. Buzzing in her spaceship, Zara examined quirky plants and cosmic dust, jotting down notes. The journey filled her heart with joy and wonder.",
+      "Violet and her brother, Jake, visited an enchanted carnival. Quirky clowns juggled while exotic birds sang. A mysterious wizard performed magic tricks, and xylophones played whimsical tunes. Zebras with colorful stripes raced in a maze. It was a joyous day filled with laughter and fun.",
+      "In a colorful world lived a rainbow unicorn named Rosie. She loved jumping over glittering streams filled with quacking ducks and racing with the wind. One day, Rosie found a lost, tiny bird with a broken wing.  She wondered if it was from the zoo. With a gentle touch and a warm hug, Rosie helped the bird feel better. They became the best friends, exploring the world together."
+    ];
+    let currentStory = 0;
+
+
+    displayUserName();
+
+    // ===== functions =====
+
+    function getUserInfoFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        userName: params.get('user'),
+        nickname: params.get('nickname')
+      };
+    }
+
+    function displayUserName() {
+      const userInfo = getUserInfoFromURL();
+      if (userInfo.userName) {
+        document.getElementById('userGreeting').innerHTML = 'Hello ' + userInfo.nickname + '<br> Welcome to the Alphabet Search!';
+      }
+    }
+
+    // ===== Event listeners =====
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const alphabetBar = document.getElementById('alphabetBar');
+      const storyText = document.getElementById('storyText');
+
+      // Populating the alphabet bar
+      alphabet.split('').forEach(letter => {
+        let span = document.createElement('span');
+        span.innerText = letter;
+        span.onclick = function() {
+          highlightLetter(letter);
+        };
+        alphabetBar.appendChild(span);
+      });
+
+      document.getElementById('changeStory').addEventListener('click', function() {
+        currentStory = (currentStory + 1) % stories.length;
+        storyText.innerText = stories[currentStory];
+      });
+
+      document.getElementById('speakStory').addEventListener('click', function() {
+        let speech = new SpeechSynthesisUtterance(stories[currentStory]);
+        window.speechSynthesis.speak(speech);
+      });
+
+      // Initialize with the first story
+      storyText.innerText = stories[currentStory];
+
+      // Function to highlight the letter
+      function highlightLetter(letter) {
+        // Reset previous highlights
+        storyText.innerHTML = storyText.innerHTML.replace(/<mark>/g, '').replace(/<\/mark>/g, '');
+
+        // Highlight new letter
+        let regex = new RegExp(letter, 'gi');
+        storyText.innerHTML = storyText.innerHTML.replace(regex, '<mark>$&</mark>');
+      }
+    });
+
+  </script>
+</body>
+
+</html>

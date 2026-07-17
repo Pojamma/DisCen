@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blockwright — Minecraft Command Builder</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=VT323&family=Jost:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg:#1a1d16;
+    --panel:#262b1e;
+    --panel-2:#2f3625;
+    --line:#3e4730;
+    --grass:#6aa84f;
+    --grass-d:#4d7c39;
+    --dirt:#7a5c3e;
+    --gold:#e0b341;
+    --redstone:#d6443a;
+    --diamond:#4fd0c9;
+    --text:#e7e8df;
+    --muted:#9aa088;
+    --shadow:0 6px 0 rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Jost',sans-serif;
+    background:
+      linear-gradient(rgba(26,29,22,.94),rgba(26,29,22,.97)),
+      repeating-linear-gradient(0deg,#1f2318 0 32px,#222719 32px 64px),
+      repeating-linear-gradient(90deg,#1f2318 0 32px,#222719 32px 64px);
+    background-size:auto,64px 64px,64px 64px;
+    color:var(--text);
+    min-height:100vh;
+    padding:24px 16px 80px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+
+  header{
+    text-align:center;margin-bottom:28px;position:relative;
+  }
+  h1{
+    font-family:'VT323',monospace;
+    font-size:clamp(42px,8vw,72px);
+    line-height:.9;
+    letter-spacing:2px;
+    color:var(--grass);
+    text-shadow:3px 3px 0 #1f2918, 6px 6px 0 rgba(0,0,0,.4);
+  }
+  h1 span{color:var(--gold)}
+  .tagline{
+    font-family:'VT323',monospace;font-size:22px;color:var(--muted);
+    margin-top:4px;letter-spacing:1px;
+  }
+
+  .card{
+    background:var(--panel);
+    border:3px solid var(--line);
+    border-top-color:#4a543a;
+    border-left-color:#4a543a;
+    box-shadow:var(--shadow);
+    padding:20px;margin-bottom:20px;
+  }
+  .card h2{
+    font-family:'VT323',monospace;font-size:26px;letter-spacing:1px;
+    color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:8px;
+  }
+  label{display:block;font-size:13px;font-weight:600;color:var(--muted);
+    text-transform:uppercase;letter-spacing:1px;margin:0 0 6px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .row > div{flex:1;min-width:120px}
+
+  select,input[type=text],input[type=number],textarea{
+    width:100%;background:var(--bg);border:2px solid var(--line);
+    color:var(--text);font-family:'Jost',sans-serif;font-size:15px;
+    padding:10px 12px;outline:none;transition:border-color .15s;
+  }
+  select:focus,input:focus,textarea:focus{border-color:var(--grass)}
+  select{cursor:pointer}
+
+  .coords{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .coords .axis{position:relative}
+  .coords .axis .tag{
+    position:absolute;top:-9px;left:8px;background:var(--panel);
+    font-family:'VT323',monospace;font-size:16px;padding:0 5px;
+  }
+  .x{color:var(--redstone)} .y{color:var(--grass)} .z{color:var(--diamond)}
+
+  .btn{
+    font-family:'VT323',monospace;font-size:20px;letter-spacing:1px;
+    background:var(--grass-d);color:#fff;border:none;
+    border-bottom:4px solid #354f27;padding:10px 18px;cursor:pointer;
+    transition:transform .05s, filter .15s;
+  }
+  .btn:hover{filter:brightness(1.1)}
+  .btn:active{transform:translateY(3px);border-bottom-width:1px}
+  .btn.alt{background:var(--dirt);border-bottom-color:#4f3c28}
+  .btn.gold{background:var(--gold);color:#2a2410;border-bottom-color:#9c7c25}
+  .btn.sm{font-size:16px;padding:6px 12px}
+  .btn.ghost{background:transparent;border:2px solid var(--line);
+    border-bottom:2px solid var(--line);color:var(--muted)}
+
+  .loc-toggle{display:flex;align-items:center;gap:10px;margin-bottom:14px;
+    background:var(--panel-2);padding:10px 12px;border:2px dashed var(--line)}
+  .loc-toggle input{width:auto;accent-color:var(--grass)}
+  .loc-toggle label{margin:0;text-transform:none;font-size:14px;color:var(--text)}
+
+  .help{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.4}
+  .help b{color:var(--gold)}
+
+  .fill-shapes{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:6px}
+  .shape{
+    background:var(--panel-2);border:2px solid var(--line);padding:12px 8px;
+    text-align:center;cursor:pointer;transition:all .12s;user-select:none;
+  }
+  .shape:hover{border-color:var(--grass)}
+  .shape.active{border-color:var(--gold);background:#3a3a22;box-shadow:inset 0 0 0 2px var(--gold)}
+  .shape .ico{font-size:24px;display:block;margin-bottom:4px}
+  .shape .nm{font-size:13px;font-weight:600}
+  .shape .ds{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.2}
+
+  .mat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;max-height:260px;overflow-y:auto;padding:4px;border:2px solid var(--line);background:var(--bg)}
+  .mat{
+    display:flex;flex-direction:column;align-items:center;gap:5px;
+    background:var(--panel-2);border:2px solid transparent;padding:8px 4px;
+    cursor:pointer;transition:all .1s;
+  }
+  .mat:hover{border-color:var(--grass)}
+  .mat.active{border-color:var(--gold);background:#3a3a22}
+  .swatch{width:34px;height:34px;border:2px solid rgba(0,0,0,.4);
+    image-rendering:pixelated;box-shadow:inset -3px -3px rgba(0,0,0,.25),inset 3px 3px rgba(255,255,255,.15)}
+  .mat .mn{font-size:11px;text-align:center;line-height:1.1}
+  .mat-search{margin-bottom:10px}
+
+  .out{
+    background:#0e1109;border:2px solid var(--grass);
+    position:relative;
+  }
+  .out textarea{
+    background:transparent;border:none;color:#bfe6a8;
+    font-family:'VT323',monospace;font-size:21px;letter-spacing:.5px;
+    min-height:74px;resize:vertical;padding:14px;line-height:1.3;
+  }
+  .out textarea:focus{border:none}
+  .out-actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+
+  .hist-item{
+    background:var(--panel-2);border:2px solid var(--line);padding:10px 12px;
+    margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;
+  }
+  .hist-item code{font-family:'VT323',monospace;font-size:18px;color:#bfe6a8;
+    word-break:break-all;flex:1}
+  .hist-item .ha{display:flex;gap:6px;flex-shrink:0}
+  .hidden{display:none!important}
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);
+    background:var(--grass);color:#13260b;font-family:'VT323',monospace;font-size:22px;
+    padding:10px 24px;border-bottom:4px solid #355020;transition:transform .3s;z-index:50;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .field{margin-bottom:14px}
+  .inline-help{cursor:help;color:var(--diamond);font-size:14px;border:1px solid var(--diamond);
+    border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;
+    font-family:'VT323',monospace;margin-left:6px}
+  .size-readout{font-family:'VT323',monospace;font-size:20px;color:var(--gold);margin-top:8px}
+  .size-readout b{color:var(--text)}
+  .warn{color:var(--redstone);font-weight:600}
+  footer{text-align:center;color:var(--muted);font-family:'VT323',monospace;font-size:18px;margin-top:30px}
+  .chosen-mat{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px}
+  .chosen-mat .swatch{width:22px;height:22px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>BLOCK<span>WRIGHT</span></h1>
+    <div class="tagline">// minecraft command forge</div>
+  </header>
+
+  <!-- COMMAND PICKER -->
+  <div class="card">
+    <h2>⛏ Choose a Command</h2>
+    <select id="cmdSelect">
+      <option value="fill">/fill — place blocks in a region</option>
+      <option value="setblock">/setblock — place a single block</option>
+      <option value="clone">/clone — copy a region</option>
+      <option value="tp">/tp — teleport</option>
+      <option value="give">/give — give items</option>
+      <option value="summon">/summon — spawn an entity</option>
+      <option value="effect">/effect — apply a status effect</option>
+      <option value="time">/time — set/add time</option>
+      <option value="weather">/weather — change weather</option>
+      <option value="gamemode">/gamemode — change game mode</option>
+    </select>
+    <p class="help" id="cmdHelp"></p>
+  </div>
+
+  <!-- LOCATION -->
+  <div class="card" id="locCard">
+    <h2 id="locCardLabel">📍 Your Location</h2>
+    <div class="loc-toggle">
+      <input type="checkbox" id="useCurrent">
+      <label for="useCurrent">Use my current location (<code>~ ~ ~</code>) — fields become offsets</label>
+    </div>
+    <div id="coordsBox">
+      <label id="coordsLabel">Current position (where you're standing)</label>
+      <div class="coords">
+        <div class="axis"><span class="tag x">X</span><input type="number" id="px" placeholder="-1" step="1"></div>
+        <div class="axis"><span class="tag y">Y</span><input type="number" id="py" placeholder="34" step="1"></div>
+        <div class="axis"><span class="tag z">Z</span><input type="number" id="pz" placeholder="-23" step="1"></div>
+      </div>
+      <p class="help" id="coordsHint">Tip: in-game press <b>F3</b> to read your XYZ. Paste like <b>-1 34 -23</b> into the X box and it auto-splits.</p>
+    </div>
+  </div>
+
+  <!-- DYNAMIC OPTIONS -->
+  <div class="card" id="optCard">
+    <h2 id="optTitle">⚙ Options</h2>
+    <div id="optBody"></div>
+  </div>
+
+  <!-- MATERIAL PICKER (shared) -->
+  <div class="card hidden" id="matCard">
+    <h2>🧱 Material <span class="inline-help" title="The block type to place. Search or click a swatch.">?</span></h2>
+    <input type="text" class="mat-search" id="matSearch" placeholder="Search blocks… (e.g. shroomlight, glass, obsidian)">
+    <div class="mat-grid" id="matGrid"></div>
+    <div class="chosen-mat" id="chosenMat"></div>
+  </div>
+
+  <!-- SECOND MATERIAL (for hollow/outline interior, optional) -->
+  <div class="card hidden" id="mat2Card">
+    <h2>🪟 Inner / Replace Block <span class="inline-help" title="Used by replace mode or as the inside fill for hollow shapes.">?</span></h2>
+    <input type="text" class="mat-search" id="mat2Search" placeholder="Search blocks…">
+    <div class="mat-grid" id="mat2Grid"></div>
+    <div class="chosen-mat" id="chosenMat2"></div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="card out">
+    <h2 style="color:var(--grass)">📜 Your Command (editable)</h2>
+    <textarea id="output" spellcheck="false">/</textarea>
+    <div class="size-readout" id="sizeReadout"></div>
+    <div class="out-actions">
+      <button class="btn gold" id="copyBtn">⧉ Copy</button>
+      <button class="btn" id="saveBtn">★ Save to History</button>
+      <button class="btn alt sm" id="regenBtn">↺ Rebuild</button>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="card">
+    <h2>🕮 Command History</h2>
+    <div id="histList"><p class="help">No saved commands yet. Build one and hit <b>Save to History</b>.</p></div>
+    <button class="btn ghost sm" id="clearHist" style="margin-top:8px">Clear all</button>
+  </div>
+
+  <footer>built for crafters · F3 is your friend · ~ = relative coords</footer>
+</div>
+
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+/* ---------- MATERIALS ---------- */
+const MATERIALS = [
+  ["stone","#7d7d7d"],["cobblestone","#828282"],["dirt","#866043"],["grass_block","#5d8a3a"],
+  ["oak_planks","#a07d4f"],["oak_log","#6e552f"],["spruce_planks","#6b4f30"],["sand","#dbd3a0"],
+  ["gravel","#867f78"],["glass","#aee2e8"],["white_stained_glass","#e8e8e8"],["bedrock","#565656"],
+  ["obsidian","#241f33"],["netherrack","#6e3636"],["soul_sand","#544334"],["glowstone","#c9a44a"],
+  ["shroomlight","#e8772d"],["sea_lantern","#bcd6cf"],["lantern","#d49b3d"],["redstone_lamp","#7a4022"],
+  ["diamond_block","#5edcd4"],["emerald_block","#3fbf6f"],["gold_block","#f4d646"],["iron_block","#d8d8d8"],
+  ["netherite_block","#48434a"],["lapis_block","#2a4ca8"],["redstone_block","#a01f1f"],["coal_block","#16161a"],
+  ["quartz_block","#e9e5dd"],["smooth_stone","#9a9a9a"],["stone_bricks","#7a7a76"],["deepslate","#4a4a52"],
+  ["deepslate_bricks","#3f3f47"],["polished_blackstone","#34313a"],["bricks","#9b5544"],["prismarine","#5f9b8c"],
+  ["copper_block","#bd6c4d"],["oxidized_copper","#54a08a"],["amethyst_block","#8f6cc4"],["honeycomb_block","#d99a2b"],
+  ["mud_bricks","#8a6f55"],["mossy_cobblestone","#6c7558"],["crying_obsidian","#2a1840"],["magma_block","#8a3b1d"],
+  ["packed_ice","#9cc4ec"],["blue_ice","#74a8e0"],["snow_block","#f0f5f7"],["white_wool","#ececec"],
+  ["red_wool","#a12722"],["blue_wool","#35399d"],["lime_wool","#70b919"],["yellow_wool","#f8c629"],
+  ["black_wool","#19171a"],["white_concrete","#cfd5d6"],["red_concrete","#8e2121"],["blue_concrete","#2a328f"],
+  ["lime_concrete","#5ea818"],["orange_concrete","#e06101"],["black_concrete","#080a0f"],["light_blue_concrete","#2389c7"],
+  ["terracotta","#985d44"],["water","#3d6fd0"],["lava","#e06a18"],["air","#00000000"],
+  ["tnt","#b53c2e"],["bookshelf","#8a6a3e"],["crafting_table","#7a5230"],["furnace","#6b6b6b"],
+  ["target","#d2b48c"],["slime_block","#7ec85a"],["honey_block","#e8a32a"],["end_stone","#dcdaa0"],
+  ["purpur_block","#a973a9"],["chiseled_quartz_block","#e9e5dd"],["calcite","#dcded8"],["tuff","#6c6c66"],
+  ["dripstone_block","#8a6a55"],["moss_block","#5b7a34"],["mangrove_planks","#7a3a3a"],["cherry_planks","#e6b7b0"],
+  ["bamboo_planks","#c8a64a"],["warped_planks","#2c6d6a"],["crimson_planks","#7a3a4a"],["sculk","#0e2a30"]
+].map(m=>[m[0],m[1]]);
+
+/* ---------- POPULAR ITEMS (give) ---------- */
+const ITEMS = [
+  "diamond","diamond_sword","diamond_pickaxe","netherite_ingot","netherite_sword",
+  "golden_apple","enchanted_golden_apple","ender_pearl","elytra","totem_of_undying",
+  "shulker_box","ender_chest","beacon","tnt","arrow","bow","crossbow","trident",
+  "iron_ingot","gold_ingot","emerald","experience_bottle","fireworks","name_tag",
+  "saddle","bucket","water_bucket","lava_bucket","cake","cooked_beef","bread"
+];
+
+/* ---------- ENTITIES (summon) ---------- */
+const ENTITIES = ["creeper","zombie","skeleton","cow","pig","sheep","chicken","villager",
+  "iron_golem","wolf","cat","horse","enderman","blaze","ghast","wither","ender_dragon",
+  "armor_stand","item_frame","allay","axolotl","fox","panda","warden"];
+
+/* ---------- EFFECTS ---------- */
+const EFFECTS = ["speed","jump_boost","strength","regeneration","resistance","fire_resistance",
+  "water_breathing","invisibility","night_vision","haste","absorption","saturation",
+  "slowness","weakness","poison","levitation","glowing","luck"];
+
+/* ---------- COMMAND HELP ---------- */
+const HELP = {
+  fill:"Fills a 3D region between two corners with a block. Pick a shape, a material, and a mode. Great for buildings, floors, walls, and hollow rooms.",
+  setblock:"Places one block at a single position. Perfect for command blocks, beacons, or precise edits.",
+  clone:"Copies all blocks from one region and pastes them at a destination.",
+  tp:"Teleports you (or a target) to a set of coordinates.",
+  give:"Gives an item to a player, with an optional count.",
+  summon:"Spawns a mob or entity at a location.",
+  effect:"Applies a potion-style status effect with a duration and amplifier.",
+  time:"Sets or adds to the world time (day/night/etc).",
+  weather:"Changes the weather to clear, rain, or thunder.",
+  gamemode:"Switches game mode: survival, creative, adventure, spectator."
+};
+
+/* ---------- STATE ---------- */
+let chosenMat = "shroomlight";
+let chosenMat2 = "air";
+let activeShape = "cube";
+let activePicker = 1; // which grid is being filled
+
+/* ---------- DOM ---------- */
+const $ = id => document.getElementById(id);
+const cmdSelect=$("cmdSelect"), cmdHelp=$("cmdHelp"), optBody=$("optBody"), optTitle=$("optTitle");
+const matCard=$("matCard"), mat2Card=$("mat2Card"), output=$("output"), sizeReadout=$("sizeReadout");
+const locCard=$("locCard");
+
+/* ---------- BUILD MATERIAL GRIDS ---------- */
+function buildGrid(gridEl, chosenEl, which){
+  gridEl.innerHTML="";
+  MATERIALS.forEach(([name,color])=>{
+    const el=document.createElement("div");
+    el.className="mat"+((which===1?chosenMat:chosenMat2)===name?" active":"");
+    el.dataset.name=name;
+    const isAir = name==="air";
+    el.innerHTML=`<div class="swatch" style="background:${isAir?'repeating-conic-gradient(#444 0 25%,#222 0 50%) 50%/10px 10px':color}"></div><div class="mn">${name.replace(/_/g,' ')}</div>`;
+    el.onclick=()=>{
+      if(which===1){chosenMat=name;} else {chosenMat2=name;}
+      [...gridEl.children].forEach(c=>c.classList.remove("active"));
+      el.classList.add("active");
+      renderChosen(chosenEl,which===1?chosenMat:chosenMat2);
+      generate();
+    };
+    gridEl.appendChild(el);
+  });
+}
+function renderChosen(el,name){
+  const color=(MATERIALS.find(m=>m[0]===name)||["",""])[1];
+  el.innerHTML=`Selected: <span class="swatch" style="background:${name==='air'?'#333':color}"></span> <b style="color:var(--gold)">${name}</b>`;
+}
+function filterGrid(gridEl,term){
+  [...gridEl.children].forEach(c=>{
+    c.style.display=c.dataset.name.includes(term.toLowerCase().replace(/ /g,'_'))?"":"none";
+  });
+}
+$("matSearch").oninput=e=>filterGrid($("matGrid"),e.target.value);
+$("mat2Search").oninput=e=>filterGrid($("mat2Grid"),e.target.value);
+
+/* ---------- COORD HELPERS ---------- */
+function paste3(el){ // allow pasting "x y z" into one box
+  el.addEventListener("input",()=>{
+    const parts=el.value.trim().split(/[\s,]+/);
+    if(parts.length===3 && parts.every(p=>p!=="" && !isNaN(p))){
+      $("px").value=parts[0];$("py").value=parts[1];$("pz").value=parts[2];
+      generate();
+    }
+  });
+}
+function rel(){ return $("useCurrent").checked; }
+// numeric value in the field (0 if blank)
+function fieldNum(axis){ const v=$("p"+axis).value; return v===""?0:parseInt(v,10); }
+// format a relative coord: ~ if total offset is 0, ~+N or ~-N otherwise
+function relCoord(total){ return total===0?"~":("~"+(total>0?"+":"")+total); }
+function P(axis){
+  if(rel()) return relCoord(fieldNum(axis));
+  const v=$("p"+axis).value;
+  return v===""?"~":v;
+}
+function coordWithOffset(axis,offset){
+  if(rel()) return relCoord(fieldNum(axis)+offset);
+  return fieldNum(axis)+offset;
+}
+
+/* ---------- OPTION RENDERERS ---------- */
+function showMat(show1,show2){
+  matCard.classList.toggle("hidden",!show1);
+  mat2Card.classList.toggle("hidden",!show2);
+}
+
+function renderOptions(){
+  const cmd=cmdSelect.value;
+  cmdHelp.textContent=HELP[cmd];
+  optBody.innerHTML="";
+  sizeReadout.textContent="";
+  locCard.classList.remove("hidden");
+  showMat(false,false);
+
+  if(cmd==="fill") return renderFill();
+
+  if(cmd==="setblock"){
+    optTitle.textContent="⚙ Set Block Options";
+    showMat(true,false);
+    optBody.innerHTML=`<p class="help">Places <b>one block</b> at your current position above. Choose the material below.</p>`;
+    return;
+  }
+
+  if(cmd==="clone"){
+    optTitle.textContent="⚙ Clone Region";
+    optBody.innerHTML=`
+      <div class="row">
+        <div class="field"><label>Region size X (width)</label><input type="number" id="cw" value="5" oninput="generate()"></div>
+        <div class="field"><label>Region size Y (height)</label><input type="number" id="ch" value="5" oninput="generate()"></div>
+        <div class="field"><label>Region size Z (length)</label><input type="number" id="cl" value="5" oninput="generate()"></div>
+      </div>
+      <label>Destination corner (where the copy starts)</label>
+      <div class="coords">
+        <div class="axis"><span class="tag x">X</span><input type="number" id="dx" placeholder="0" oninput="generate()"></div>
+        <div class="axis"><span class="tag y">Y</span><input type="number" id="dy" placeholder="64" oninput="generate()"></div>
+        <div class="axis"><span class="tag z">Z</span><input type="number" id="dz" placeholder="0" oninput="generate()"></div>
+      </div>
+      <div class="field" style="margin-top:14px"><label>Mode</label>
+        <select id="cmode" onchange="generate()">
+          <option value="replace">replace — overwrite destination</option>
+          <option value="masked">masked — copy non-air only</option>
+          <option value="filtered">filtered (force)</option>
+        </select>
+      </div>
+      <p class="help">Source region runs from your position above to that point + the size. Destination is the corner you paste to.</p>`;
+    return;
+  }
+
+  if(cmd==="tp"){
+    optTitle.textContent="⚙ Teleport";
+    optBody.innerHTML=`<div class="field"><label>Target</label>
+      <select id="tptarget" onchange="generate()">
+        <option value="@s">@s — yourself</option>
+        <option value="@p">@p — nearest player</option>
+        <option value="@a">@a — all players</option>
+      </select></div>
+      <p class="help">Teleports the target to the coordinates above.</p>`;
+    return;
+  }
+
+  if(cmd==="give"){
+    locCard.classList.add("hidden");
+    optTitle.textContent="⚙ Give Item";
+    optBody.innerHTML=`
+      <div class="field"><label>Target</label>
+        <select id="gtarget" onchange="generate()">
+          <option value="@p">@p — nearest player</option>
+          <option value="@s">@s — yourself</option>
+          <option value="@a">@a — everyone</option>
+        </select></div>
+      <div class="row">
+        <div class="field"><label>Item</label><select id="gitem" onchange="generate()">
+          ${ITEMS.map(i=>`<option value="${i}">${i.replace(/_/g,' ')}</option>`).join("")}
+        </select></div>
+        <div class="field"><label>Count</label><input type="number" id="gcount" value="1" min="1" max="64" oninput="generate()"></div>
+      </div>`;
+    return;
+  }
+
+  if(cmd==="summon"){
+    optTitle.textContent="⚙ Summon Entity";
+    optBody.innerHTML=`<div class="field"><label>Entity</label>
+      <select id="sentity" onchange="generate()">
+        ${ENTITIES.map(e=>`<option value="${e}">${e.replace(/_/g,' ')}</option>`).join("")}
+      </select></div>
+      <p class="help">Spawns the entity at the coordinates above.</p>`;
+    return;
+  }
+
+  if(cmd==="effect"){
+    locCard.classList.add("hidden");
+    optTitle.textContent="⚙ Apply Effect";
+    optBody.innerHTML=`
+      <div class="field"><label>Target</label>
+        <select id="etarget" onchange="generate()">
+          <option value="@s">@s — yourself</option>
+          <option value="@p">@p — nearest player</option>
+          <option value="@a">@a — everyone</option>
+        </select></div>
+      <div class="field"><label>Effect</label><select id="eeffect" onchange="generate()">
+        ${EFFECTS.map(e=>`<option value="${e}">${e.replace(/_/g,' ')}</option>`).join("")}
+      </select></div>
+      <div class="row">
+        <div class="field"><label>Duration (seconds)</label><input type="number" id="edur" value="60" oninput="generate()"></div>
+        <div class="field"><label>Amplifier (0 = level I)</label><input type="number" id="eamp" value="0" min="0" oninput="generate()"></div>
+      </div>`;
+    return;
+  }
+
+  if(cmd==="time"){
+    locCard.classList.add("hidden");
+    optTitle.textContent="⚙ Time";
+    optBody.innerHTML=`
+      <div class="field"><label>Action</label>
+        <select id="tact" onchange="generate()"><option value="set">set</option><option value="add">add</option></select></div>
+      <div class="field"><label>Value</label>
+        <select id="tval" onchange="generate()">
+          <option value="day">day</option><option value="noon">noon</option>
+          <option value="night">night</option><option value="midnight">midnight</option>
+          <option value="1000">1000 (custom ticks)</option>
+        </select></div>`;
+    return;
+  }
+
+  if(cmd==="weather"){
+    locCard.classList.add("hidden");
+    optTitle.textContent="⚙ Weather";
+    optBody.innerHTML=`<div class="field"><label>Type</label>
+      <select id="wtype" onchange="generate()"><option value="clear">clear</option><option value="rain">rain</option><option value="thunder">thunder</option></select></div>
+      <div class="field"><label>Duration (seconds, optional)</label><input type="number" id="wdur" placeholder="(blank = default)" oninput="generate()"></div>`;
+    return;
+  }
+
+  if(cmd==="gamemode"){
+    locCard.classList.add("hidden");
+    optTitle.textContent="⚙ Game Mode";
+    optBody.innerHTML=`<div class="field"><label>Mode</label>
+      <select id="gmmode" onchange="generate()">
+        <option value="survival">survival</option><option value="creative">creative</option>
+        <option value="adventure">adventure</option><option value="spectator">spectator</option>
+      </select></div>
+      <div class="field"><label>Target</label>
+      <select id="gmtarget" onchange="generate()"><option value="@s">@s — yourself</option><option value="@a">@a — everyone</option></select></div>`;
+    return;
+  }
+}
+
+/* ---------- FILL (the detailed one) ---------- */
+const SHAPES=[
+  ["cube","⬛","Solid Cube","filled box"],
+  ["plane","▭","Flat Plane","floor / ceiling"],
+  ["wall","🧱","Wall","vertical slab"],
+  ["hollow","⬜","Hollow Box","walls only, empty inside"],
+  ["outline","🔲","Frame / Outline","just the edges"],
+  ["destroy","💥","Clear (air)","remove blocks"],
+  ["replace","🔁","Replace","swap one block for another"]
+];
+function renderFill(){
+  optTitle.textContent="⚙ Fill Builder";
+  showMat(true,false);
+  optBody.innerHTML=`
+    <label>What do you want to fill? <span class="inline-help" title="Shape decides the dimensions and the fill mode used.">?</span></label>
+    <div class="fill-shapes" id="shapeGrid">
+      ${SHAPES.map(s=>`<div class="shape${s[0]===activeShape?' active':''}" data-shape="${s[0]}">
+        <span class="ico">${s[1]}</span><span class="nm">${s[2]}</span><span class="ds">${s[3]}</span></div>`).join("")}
+    </div>
+
+    <div class="row" id="dimRow" style="margin-top:16px"></div>
+    <div class="size-readout" id="dimReadout"></div>
+
+    <div class="field" style="margin-top:16px"><label>Build direction <span class="inline-help" title="Which way the region extends from where you stand.">?</span></label>
+      <select id="dir" onchange="generate()">
+        <option value="pos">Positive (away: +X, +Y up, +Z)</option>
+        <option value="center">Centered on me</option>
+        <option value="neg">Negative (toward: -X, down, -Z)</option>
+      </select>
+    </div>
+
+    <div class="field"><label>Fill mode (handling of existing blocks) <span class="inline-help" title="replace = overwrite all; keep = only fill air; destroy = drop items; hollow/outline shape your structure.">?</span></label>
+      <select id="fmode" onchange="onFmode()">
+        <option value="auto">Auto (based on shape)</option>
+        <option value="replace">replace — overwrite everything</option>
+        <option value="keep">keep — only fill air</option>
+        <option value="destroy">destroy — break blocks (drops items)</option>
+        <option value="hollow">hollow — outer shell, air inside</option>
+        <option value="outline">outline — just the frame edges</option>
+      </select>
+    </div>
+
+    <p class="help" id="modeHelp"></p>`;
+
+  // shape grid clicks
+  $("shapeGrid").querySelectorAll(".shape").forEach(s=>{
+    s.onclick=()=>{
+      activeShape=s.dataset.shape;
+      $("shapeGrid").querySelectorAll(".shape").forEach(x=>x.classList.remove("active"));
+      s.classList.add("active");
+      // replace shape needs second material
+      mat2Card.classList.toggle("hidden", activeShape!=="replace");
+      renderDims();
+      generate();
+    };
+  });
+  mat2Card.classList.toggle("hidden", activeShape!=="replace");
+  renderDims();
+}
+
+function renderDims(){
+  const r=$("dimRow"); if(!r) return;
+  const W=`<div class="field"><label>Width (X)</label><input type="number" id="dW" value="5" min="1" oninput="generate()"></div>`;
+  const H=`<div class="field"><label>Height (Y)</label><input type="number" id="dH" value="5" min="1" oninput="generate()"></div>`;
+  const L=`<div class="field"><label>Length (Z)</label><input type="number" id="dL" value="5" min="1" oninput="generate()"></div>`;
+  if(activeShape==="plane"){ r.innerHTML=W+L; }            // flat: no height
+  else if(activeShape==="wall"){ r.innerHTML=W+H; }        // vertical: no depth
+  else { r.innerHTML=W+H+L; }
+}
+
+function onFmode(){ generate(); }
+
+function autoMode(){
+  switch(activeShape){
+    case "hollow": return "hollow";
+    case "outline": return "outline";
+    case "destroy": return "destroy";
+    default: return "replace";
+  }
+}
+
+/* ---------- GENERATE ---------- */
+function dimVal(id,def){ const e=$(id); return e?Math.max(1,parseInt(e.value||def,10)):def; }
+
+function spanEnds(){
+  // returns start/end coords for a box given dims + direction
+  let w=dimVal("dW",5), h=dimVal("dH",5), l=dimVal("dL",5);
+  if(activeShape==="plane") h=1;
+  if(activeShape==="wall")  l=1;
+  const dir=($("dir")||{value:"pos"}).value;
+  function rng(axis,size){
+    if(dir==="center"){
+      const half=Math.floor((size-1)/2);
+      return [coordWithOffset(axis,-half), coordWithOffset(axis,size-1-half)];
+    } else if(dir==="neg"){
+      return [coordWithOffset(axis,-(size-1)), coordWithOffset(axis,0)];
+    } else {
+      return [coordWithOffset(axis,0), coordWithOffset(axis,size-1)];
+    }
+  }
+  const [x1,x2]=rng("x",w);
+  // Y: positive = up; negative direction still goes up for plane/cube unless dir=neg
+  let y1,y2;
+  if(dir==="neg"){ [y1,y2]=[coordWithOffset("y",-(h-1)),coordWithOffset("y",0)]; }
+  else if(dir==="center"){ const half=Math.floor((h-1)/2); [y1,y2]=[coordWithOffset("y",-half),coordWithOffset("y",h-1-half)]; }
+  else { [y1,y2]=[coordWithOffset("y",0),coordWithOffset("y",h-1)]; }
+  const [z1,z2]=rng("z",l);
+  return {x1,y1,z1,x2,y2,z2,w,h,l};
+}
+
+function generate(){
+  const cmd=cmdSelect.value;
+  let out="/";
+
+  if(cmd==="fill"){
+    const s=spanEnds();
+    let mode = ($("fmode")?$("fmode").value:"auto");
+    if(mode==="auto") mode=autoMode();
+    let blk = activeShape==="destroy" ? "air" : chosenMat;
+    out=`/fill ${s.x1} ${s.y1} ${s.z1} ${s.x2} ${s.y2} ${s.z2} ${blk}`;
+    if(activeShape==="replace"){
+      out+=` replace ${chosenMat2}`;
+    } else if(mode==="destroy"){ out+=` destroy`; }
+    else if(mode==="keep"){ out+=` keep`; }
+    else if(mode==="hollow"){ out+=` hollow`; }
+    else if(mode==="outline"){ out+=` outline`; }
+    else { out+=` replace`; }
+
+    // readouts
+    const vol=s.w*s.h*s.l;
+    let mh=$("modeHelp");
+    const MM={replace:"Overwrites every block in the region.",keep:"Only fills spaces that are currently air.",
+      destroy:"Breaks existing blocks and drops them as items.",hollow:"Builds outer walls/shell, leaves the inside as air.",
+      outline:"Places only the 12 edges (a wireframe frame).",};
+    if(mh) mh.innerHTML=(MM[mode]||"")+(activeShape==="replace"?` Replaces <b>${chosenMat2}</b> with <b>${chosenMat}</b>.`:"");
+    const dr=$("dimReadout");
+    if(dr) dr.innerHTML=`Region: <b>${s.w} × ${s.h} × ${s.l}</b> = <b>${vol.toLocaleString()}</b> blocks`;
+    sizeReadout.innerHTML = vol>32768
+      ? `<span class="warn">⚠ ${vol.toLocaleString()} blocks — exceeds the 32,768-block /fill limit. Reduce size or split it up.</span>`
+      : `Volume: <b>${vol.toLocaleString()}</b> / 32,768 blocks`;
+  }
+
+  else if(cmd==="setblock"){
+    out=`/setblock ${P("x")} ${P("y")} ${P("z")} ${chosenMat}`;
+  }
+
+  else if(cmd==="clone"){
+    const w=dimVal("cw",5)-1,h=dimVal("ch",5)-1,l=dimVal("cl",5)-1;
+    const x1=P("x"),y1=P("y"),z1=P("z");
+    const x2=coordWithOffset("x",w),y2=coordWithOffset("y",h),z2=coordWithOffset("z",l);
+    const dx=$("dx").value||"~",dy=$("dy").value||"~",dz=$("dz").value||"~";
+    const mode=$("cmode").value;
+    out=`/clone ${x1} ${y1} ${z1} ${x2} ${y2} ${z2} ${dx} ${dy} ${dz} ${mode}`;
+  }
+
+  else if(cmd==="tp"){
+    out=`/tp ${$("tptarget").value} ${P("x")} ${P("y")} ${P("z")}`;
+  }
+
+  else if(cmd==="give"){
+    out=`/give ${$("gtarget").value} ${$("gitem").value} ${$("gcount").value||1}`;
+  }
+
+  else if(cmd==="summon"){
+    out=`/summon ${$("sentity").value} ${P("x")} ${P("y")} ${P("z")}`;
+  }
+
+  else if(cmd==="effect"){
+    out=`/effect give ${$("etarget").value} ${$("eeffect").value} ${$("edur").value||60} ${$("eamp").value||0}`;
+  }
+
+  else if(cmd==="time"){
+    out=`/time ${$("tact").value} ${$("tval").value}`;
+  }
+
+  else if(cmd==="weather"){
+    out=`/weather ${$("wtype").value}`+($("wdur").value?` ${$("wdur").value}`:"");
+  }
+
+  else if(cmd==="gamemode"){
+    out=`/gamemode ${$("gmmode").value} ${$("gmtarget").value}`;
+  }
+
+  output.value=out;
+  if(cmd!=="fill") sizeReadout.textContent="";
+}
+
+/* ---------- COPY / SAVE / HISTORY ---------- */
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1400);}
+
+$("copyBtn").onclick=async()=>{
+  try{ await navigator.clipboard.writeText(output.value); }
+  catch{ output.select(); document.execCommand("copy"); }
+  toast("Copied!");
+};
+$("regenBtn").onclick=generate;
+
+let history=[];
+$("saveBtn").onclick=()=>{
+  const v=output.value.trim();
+  if(!v||v==="/"){toast("Nothing to save");return;}
+  history.unshift({cmd:v,t:new Date().toLocaleString()});
+  if(history.length>50) history.pop();
+  renderHist(); toast("Saved!");
+};
+function renderHist(){
+  const l=$("histList");
+  if(!history.length){l.innerHTML=`<p class="help">No saved commands yet. Build one and hit <b>Save to History</b>.</p>`;return;}
+  l.innerHTML=history.map((h,i)=>`
+    <div class="hist-item">
+      <code>${h.cmd.replace(/</g,"&lt;")}</code>
+      <div class="ha">
+        <button class="btn sm gold" onclick="copyHist(${i})">⧉</button>
+        <button class="btn sm" onclick="loadHist(${i})">↑</button>
+        <button class="btn sm ghost" onclick="delHist(${i})">✕</button>
+      </div>
+    </div>`).join("");
+}
+window.copyHist=async i=>{try{await navigator.clipboard.writeText(history[i].cmd);}catch{}toast("Copied!");};
+window.loadHist=i=>{output.value=history[i].cmd;output.scrollIntoView({behavior:"smooth"});toast("Loaded to editor");};
+window.delHist=i=>{history.splice(i,1);renderHist();};
+$("clearHist").onclick=()=>{history=[];renderHist();};
+
+/* ---------- WIRE UP ---------- */
+function updateLocLabels(){
+  const isRel=rel();
+  $("locCardLabel").textContent=isRel?"📍 Starting Offset (~ mode)":"📍 Your Location";
+  $("coordsLabel").textContent=isRel?"Offset from where you stand (0 = no offset)":"Current position (where you're standing)";
+  $("coordsHint").innerHTML=isRel
+    ? `Fields are <b>offsets</b> added to <code>~</code>. Leave at <b>0</b> for no offset. e.g. Y=+2 → <b>~+2</b>.`
+    : `Tip: in-game press <b>F3</b> to read your XYZ. Paste like <b>-1 34 -23</b> into the X box and it auto-splits.`;
+  ["px","py","pz"].forEach((id,i)=>{
+    $(id).placeholder=isRel?"0":(["-1","34","-23"][i]);
+  });
+}
+$("useCurrent").onchange=()=>{ updateLocLabels(); generate(); };
+["px","py","pz"].forEach(id=>$(id).addEventListener("input",generate));
+paste3($("px"));
+cmdSelect.onchange=()=>{renderOptions();generate();};
+window.generate=generate;
+window.onFmode=onFmode;
+
+/* init */
+buildGrid($("matGrid"),$("chosenMat"),1);
+buildGrid($("mat2Grid"),$("chosenMat2"),2);
+renderChosen($("chosenMat"),chosenMat);
+renderChosen($("chosenMat2"),chosenMat2);
+updateLocLabels();
+renderOptions();
+generate();
+</script>
+</body>
+</html>

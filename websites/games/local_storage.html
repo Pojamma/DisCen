@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalStorage Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+        h2 {
+            color: #333;
+        }
+        input, select, button {
+            font-size: 18px;
+            padding: 10px;
+            margin: 10px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #output {
+            background: white;
+            padding: 10px;
+            border: 1px solid #ddd;
+            width: 80%;
+            margin: 20px auto;
+            font-size: 18px;
+            text-align: left;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 10px auto;
+            width: 50%;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .button-group {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h2>LocalStorage</h2>
+    
+    <div class="section">
+    	    
+        <label for="keySelect">Select Key:</label>
+        <select id="keySelect" onchange="populateValue()"></select>
+<br>
+        <label for="key">Key:</label>
+        <input type="text" id="key" placeholder="Enter key">
+        <br>
+        <label for="value">Value:</label>
+<textarea id="value" placeholder="Enter value" rows="4" cols="50"></textarea>
+
+        <br>
+        <button onclick="saveToLocalStorage()">Save</button>
+        <button onclick="loadFromLocalStorage()">Load</button>
+    </div>
+    
+    <div class="section button-group">
+        <button onclick="confirmDelete()">Delete</button>
+        <button onclick="confirmClear()">Clear All</button>
+    </div>
+    
+    <h3>Stored Data:</h3>
+    <pre id="output"></pre>
+
+    <script>
+function saveToLocalStorage() {
+    let key = document.getElementById("key").value;
+    let value = document.getElementById("value").value;
+    if (key && value) {
+        localStorage.setItem(key, value);
+        alert("Saved!");
+        loadFromLocalStorage();
+    }
+}
+
+
+function loadFromLocalStorage() {
+    let output = "";
+    let keySelect = document.getElementById("keySelect");
+    keySelect.innerHTML = "";
+
+    // Get all keys, sort them alphabetically
+    let keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        keys.push(localStorage.key(i));
+    }
+    keys.sort(); // Sort keys alphabetically
+
+    // Populate dropdown and output text
+    keys.forEach(key => {
+        let value = localStorage.getItem(key);
+        output += `${key}: ${value}\n`;
+        let option = document.createElement("option");
+        option.value = key;
+        option.textContent = key;
+        keySelect.appendChild(option);
+    });
+
+    document.getElementById("output").textContent = output;
+}
+
+
+        function confirmDelete() {
+            let key = document.getElementById("key").value;
+            if (key && confirm(`Are you sure you want to delete "${key}"?`)) {
+                deleteFromLocalStorage();
+            }
+        }
+
+        function deleteFromLocalStorage() {
+            let key = document.getElementById("key").value;
+            if (key) {
+                localStorage.removeItem(key);
+                alert("Deleted!");
+                loadFromLocalStorage();
+            }
+        }
+
+        function confirmClear() {
+            if (confirm("Are you sure you want to clear all data? This action cannot be undone.")) {
+                clearLocalStorage();
+            }
+        }
+
+        function clearLocalStorage() {
+            localStorage.clear();
+            alert("All data cleared!");
+            loadFromLocalStorage();
+        }
+
+        function populateValue() {
+            let selectedKey = document.getElementById("keySelect").value;
+            document.getElementById("key").value = selectedKey;
+            document.getElementById("value").value = localStorage.getItem(selectedKey) || "";
+        }
+
+        // Load stored data on page load
+        window.onload = loadFromLocalStorage;
+    </script>
+</body>
+</html>

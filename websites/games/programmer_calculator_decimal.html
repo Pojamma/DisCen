@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programmer Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 120vh;
+            background-color: #222;
+            color: #fff;
+            margin: 0;
+        }
+        .calculator {
+            width: 360px;
+            background: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        .input-field {
+            width: 100%;
+            height: 50px;
+            text-align: right;
+            font-size: 1.5em;
+            padding: 10px;
+            background: #000;
+            color: #0f0;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border: none;
+            box-sizing: border-box;
+        }
+        .base-display {
+            display: grid;
+            grid-template-columns: 60px 1fr;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        .base-row {
+            display: contents;
+            cursor: pointer;
+        }
+        .base-label {
+            background: #444;
+            padding: 10px;
+            text-align: center;
+            border-radius: 5px;
+            font-weight: bold;
+            height: 20px;
+            line-height: 20px;
+            transition: all 0.3s;
+        }
+        .base-value {
+            background: #222;
+            padding: 10px;
+            text-align: right;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: nowrap;
+            height: 20px;
+            line-height: 20px;
+        }
+        .active .base-label {
+            background: #2a6b2a;
+            position: relative;
+        }
+        .active .base-label::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: #0f0;
+            border-radius: 5px 0 0 5px;
+        }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+        }
+        button {
+            width: 100%;
+            height: 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            background: #555;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #777;
+        }
+        button.disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+        }
+        .double {
+            grid-column: span 2;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #555;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .modal-close {
+            color: #fff;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-close:hover {
+            color: #ccc;
+        }
+        .options-menu {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background-color: #444;
+            border-radius: 5px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+        .options-menu button {
+            display: block;
+            width: 150px;
+            text-align: left;
+            padding: 10px;
+            background: none;
+            border-bottom: 1px solid #555;
+        }
+        .options-menu button:last-child {
+            border-bottom: none;
+        }
+        .options-menu button:hover {
+            background: #555;
+        }
+        .history-item {
+            background: #222;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-item-expression {
+            flex-grow: 1;
+            margin-right: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .clear-history-btn {
+            background: #800 !important;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin-top: 10px;
+        }
+        .code-example {
+            background-color: #222;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .modal-body button {
+            margin: 5px 0;
+            width: 100%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator">
+        <input type="text" class="input-field" id="input" placeholder="0" autocomplete="off">
+        
+        <div class="base-display">
+            <div class="base-row" id="bin-row" onclick="selectBase(2)">
+                <div class="base-label">BIN</div>
+                <div class="base-value" id="bin-value">0</div>
+            </div>
+            <div class="base-row active" id="dec-row" onclick="selectBase(10)">
+                <div class="base-label">DEC</div>
+                <div class="base-value" id="dec-value">0</div>
+            </div>
+            <div class="base-row" id="oct-row" onclick="selectBase(8)">
+                <div class="base-label">OCT</div>
+                <div class="base-value" id="oct-value">0</div>
+            </div>
+            <div class="base-row" id="hex-row" onclick="selectBase(16)">
+                <div class="base-label">HEX</div>
+                <div class="base-value" id="hex-value">0</div>
+            </div>
+        </div>
+        
+        <div class="buttons">
+            <button onclick="clearInput()">C</button>
+            <button onclick="memoryStore()">M+</button>
+            <button onclick="memoryRecall()">MR</button>
+            <button onclick="memoryClear()">MC</button>
+
+            <button onclick="deleteLast()">⌫</button>
+            <button onclick="appendOperator('&')">AND</button>
+            <button onclick="appendOperator('|')">OR</button>
+            <button onclick="appendOperator('^')">XOR</button>
+
+            <button onclick="appendOperator('<<')"><<</button>
+            <button onclick="appendOperator('>>')">>></button>
+            <button onclick="invert()">NOT</button>
+            <button onclick="appendOperator('%')">MOD</button>
+
+            <button onclick="appendValue('D')" id="btn-D">D</button>
+            <button onclick="appendValue('E')" id="btn-E">E</button>
+            <button onclick="appendValue('F')" id="btn-F">F</button>
+            <button onclick="appendOperator('/')">/</button>
+
+            <button onclick="appendValue('A')" id="btn-A">A</button>
+            <button onclick="appendValue('B')" id="btn-B">B</button>
+            <button onclick="appendValue('C')" id="btn-C">C</button>
+            <button onclick="appendOperator('*')">*</button>
+
+            <button onclick="appendValue('7')" id="btn-7">7</button>
+            <button onclick="appendValue('8')" id="btn-8">8</button>
+            <button onclick="appendValue('9')" id="btn-9">9</button>
+            <button onclick="appendOperator('-')">-</button>
+
+            <button onclick="appendValue('4')" id="btn-4">4</button>
+            <button onclick="appendValue('5')" id="btn-5">5</button>
+            <button onclick="appendValue('6')" id="btn-6">6</button>
+            <button onclick="appendOperator('+')">+</button>
+
+            <button onclick="appendValue('1')" id="btn-1">1</button>
+            <button onclick="appendValue('2')" id="btn-2">2</button>
+            <button onclick="appendValue('3')" id="btn-3">3</button>
+            <button onclick="calculate()">=</button>
+
+            <button onclick="appendValue('0')" id="btn-0">0</button>
+            <button onclick="appendValue('.')" id="btn-decimal">.</button>
+            <button onclick="toggleSign()">+/-</button>
+            <button onclick="showOptionsMenu()">...</button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Programmer Calculator Help</h2>
+                <span class="modal-close" onclick="closeModal('helpModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <h3>Number Bases</h3>
+                <p>Click on BIN, DEC, OCT, or HEX to change the number base. Each base allows different digits:</p>
+                <ul>
+                    <li>Binary (BIN): Only 0 and 1</li>
+                    <li>Decimal (DEC): 0-9</li>
+                    <li>Octal (OCT): 0-7</li>
+                    <li>Hexadecimal (HEX): 0-9 and A-F</li>
+                </ul>
+                
+                <h3>Radix Point</h3>
+                <p>The point (.) works in all bases as a radix point. In binary it represents a binary point, in octal an octal point, in decimal a decimal point, and in hexadecimal a hex point. This allows for fractional values in any base.</p>
+
+                <h3>Bitwise Operations</h3>
+                <p>Bitwise operations work on the binary representation of numbers:</p>
+                
+                <h4>AND (&)</h4>
+                <p>Returns 1 if both bits are 1, otherwise 0.</p>
+                <div class="code-example">
+                    5 (0101 in binary) & 3 (0011 in binary) = 1 (0001 in binary)
+                    Bit comparison:
+                    0101
+                    0011
+                    ----
+                    0001
+                </div>
+
+                <h4>OR (|)</h4>
+                <p>Returns 1 if at least one bit is 1.</p>
+                <div class="code-example">
+                    5 (0101 in binary) | 3 (0011 in binary) = 7 (0111 in binary)
+                    Bit comparison:
+                    0101
+                    0011
+                    ----
+                    0111
+                </div>
+
+                <h4>XOR (^)</h4>
+                <p>Returns 1 if bits are different, 0 if bits are the same.</p>
+                <div class="code-example">
+                    5 (0101 in binary) ^ 3 (0011 in binary) = 6 (0110 in binary)
+                    Bit comparison:
+                    0101
+                    0011
+                    ----
+                    0110
+                </div>
+
+                <h4>NOT (~)</h4>
+                <p>Inverts all bits (0 becomes 1, 1 becomes 0).</p>
+                <div class="code-example">
+                    ~5 (0101 in binary) = -6 
+                    Bit inversion:
+                    0101
+                    ----
+                    1010 (two's complement representation)
+                </div>
+
+                <h4>Left Shift (<<)</h4>
+                <p>Shifts bits to the left, adding 0s on the right.</p>
+                <div class="code-example">
+                    5 (0101 in binary) << 2 = 20 (10100 in binary)
+                    Bit shift:
+                    0101 << 2
+                    ----
+                    10100
+                </div>
+
+                <h4>Right Shift (>>)</h4>
+                <p>Shifts bits to the right, preserving the sign bit.</p>
+                <div class="code-example">
+                    20 (10100 in binary) >> 2 = 5 (0101 in binary)
+                    Bit shift:
+                    10100 >> 2
+                    ----
+                    00101
+                </div>
+
+                <h3>Memory Functions</h3>
+                <ul>
+                    <li>M+: Store current value in memory</li>
+                    <li>MR: Recall value from memory</li>
+                    <li>MC: Clear memory</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Calculation History</h2>
+                <span class="modal-close" onclick="closeModal('historyModal')">&times;</span>
+            </div>
+            <div class="modal-body" id="historyContainer">
+                <p id="noHistoryMessage">No calculation history yet.</p>
+                <div id="historyList"></div>
+                <div id="clearHistoryContainer" style="display:none;">
+                    <button class="clear-history-btn" onclick="clearHistory()">Clear History</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="optionsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Options</h2>
+                <span class="modal-close" onclick="closeModal('optionsModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <button onclick="showHelp()">Help</button>
+                <button onclick="showHistory()">History</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let memory = 0;
+        let currentBase = 10;
+        let calculationHistory = [];
+
+        const input = document.getElementById('input');
+        const binValue = document.getElementById('bin-value');
+        const decValue = document.getElementById('dec-value');
+        const octValue = document.getElementById('oct-value');
+        const hexValue = document.getElementById('hex-value');
+        
+        // Add event listener for input changes
+        input.addEventListener('input', function() {
+            updateAllBases();
+        });
+
+        function showOptionsMenu() {
+            document.getElementById('optionsModal').style.display = 'flex';
+        }
+
+        function showHelp() {
+            document.getElementById('helpModal').style.display = 'flex';
+            closeModal('optionsModal'); // Close the options modal
+        }
+
+        function showHistory() {
+            const historyList = document.getElementById('historyList');
+            const noHistoryMessage = document.getElementById('noHistoryMessage');
+            const clearHistoryContainer = document.getElementById('clearHistoryContainer');
+
+            // Clear previous history
+            historyList.innerHTML = '';
+
+            if (calculationHistory.length === 0) {
+                noHistoryMessage.style.display = 'block';
+                clearHistoryContainer.style.display = 'none';
+            } else {
+                noHistoryMessage.style.display = 'none';
+                clearHistoryContainer.style.display = 'block';
+
+                // Reverse to show most recent first
+                calculationHistory.slice().reverse().forEach((item, index) => {
+                    const historyItem = document.createElement('div');
+                    historyItem.classList.add('history-item');
+                    historyItem.innerHTML = `
+                        <div class="history-item-expression">${item.expression}</div>
+                        <div class="history-item-result">${item.result}</div>
+                    `;
+                    historyList.appendChild(historyItem);
+                });
+            }
+
+            document.getElementById('historyModal').style.display = 'flex';
+            closeModal('optionsModal'); // Close the options modal
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function addToHistory(expression, result) {
+            calculationHistory.push({
+                expression: expression,
+                result: result
+            });
+        }
+
+        function clearHistory() {
+            calculationHistory = [];
+            showHistory(); // Refresh the history view
+        }
+        
+        function selectBase(base) {
+            // Get current value and convert to decimal
+            let currentValue = 0;
+            let hasFraction = false;
+            let fractionPart = 0;
+            
+            if (input.value.trim() !== '') {
+                if (input.value.includes('.')) {
+                    const parts = input.value.split('.');
+                    // Convert integer part
+                    currentValue = parts[0] === '' ? 0 : parseInt(parts[0], currentBase);
+                    if (isNaN(currentValue)) currentValue = 0;
+                    
+                    // Convert fractional part
+                    if (parts.length > 1 && parts[1] !== '') {
+                        hasFraction = true;
+                        const fractionalPart = parts[1];
+                        
+                        for (let i = 0; i < fractionalPart.length; i++) {
+                            const digit = parseInt(fractionalPart[i], currentBase);
+                            if (isNaN(digit)) continue;
+                            fractionPart += digit * Math.pow(currentBase, -(i+1));
+                        }
+                        
+                        currentValue += fractionPart;
+                    }
+                } else {
+                    try {
+                        currentValue = parseInt(input.value, currentBase);
+                        if (isNaN(currentValue)) currentValue = 0;
+                    } catch (e) {
+                        currentValue = 0;
+                    }
+                }
+            }
+            
+            // Update active base
+            currentBase = base;
+            document.querySelectorAll('.base-row').forEach(row => {
+                row.classList.remove('active');
+            });
+            
+            // Add active class to selected base
+            let activeRow;
+            switch(base) {
+                case 2: activeRow = 'bin-row'; break;
+                case 8: activeRow = 'oct-row'; break;
+                case 10: activeRow = 'dec-row'; break;
+                case 16: activeRow = 'hex-row'; break;
+            }
+            document.getElementById(activeRow).classList.add('active');
+            
+                // When converting between bases, apply precision handling for the input
+                if (hasFraction) {
+                    const integerPart = Math.floor(currentValue);
+                    // Use the enhanced fraction converter for all bases
+                    const newFractionPart = convertFractionToBase(currentValue - integerPart, base);
+                    
+                    input.value = integerPart.toString(base).toUpperCase() + 
+                                 (newFractionPart !== '0' ? '.' + newFractionPart : '');
+                } else {
+                    input.value = currentValue.toString(base).toUpperCase();
+                }
+            
+            // Update button states
+            updateButtonStates();
+            
+            // Update all displayed values
+            updateAllBases();
+        }
+        
+        function updateAllBases() {
+            // Handle case when input is empty
+            if (input.value.trim() === '') {
+                binValue.innerText = '0';
+                decValue.innerText = '0';
+                octValue.innerText = '0';
+                hexValue.innerText = '0';
+                return;
+            }
+            
+            // Handle inputs with radix points
+            if (input.value.includes('.')) {
+                const parts = input.value.split('.');
+                
+                // Convert the integer part
+                let integerPart = parts[0] === '' ? 0 : parseInt(parts[0], currentBase);
+                if (isNaN(integerPart)) integerPart = 0;
+                
+                // Convert the fractional part if it exists
+                let decimalValue = integerPart;
+                if (parts.length > 1 && parts[1] !== '') {
+                    // Get the fractional part as a decimal
+                    let fraction = 0;
+                    const fractionalPart = parts[1];
+                    
+                    for (let i = 0; i < fractionalPart.length; i++) {
+                        const digit = parseInt(fractionalPart[i], currentBase);
+                        if (isNaN(digit)) continue; // Skip invalid digits
+                        fraction += digit * Math.pow(currentBase, -(i+1));
+                    }
+                    
+                    decimalValue += fraction;
+                }
+                
+                // For displaying values, use improved precision handling
+                binValue.innerText = integerPart.toString(2) + (parts.length > 1 ? '.' + convertFractionToBase(decimalValue - integerPart, 2) : '');
+                octValue.innerText = integerPart.toString(8) + (parts.length > 1 ? '.' + convertFractionToBase(decimalValue - integerPart, 8) : '');
+                decValue.innerText = integerPart.toString(10) + (parts.length > 1 ? '.' + convertFractionToBase(decimalValue - integerPart, 10) : '');
+                hexValue.innerText = integerPart.toString(16).toUpperCase() + (parts.length > 1 ? '.' + convertFractionToBase(decimalValue - integerPart, 16).toUpperCase() : '');
+                
+                return;
+            }
+            
+            // Normal integer handling
+            let value = parseInt(input.value, currentBase);
+            if (isNaN(value)) value = 0;
+            
+            // Update all base displays
+            binValue.innerText = value.toString(2);
+            decValue.innerText = value.toString(10);
+            octValue.innerText = value.toString(8);
+            hexValue.innerText = value.toString(16).toUpperCase();
+        }
+        
+        // Helper function to convert a decimal fraction to any base with improved precision
+        function convertFractionToBase(fraction, base) {
+            if (Math.abs(fraction) < 1e-10) return '0'; // Handle tiny rounding errors
+            
+            // Apply a tiny offset to account for binary floating point errors
+            // This helps with precision across all bases
+            fraction = Math.round(fraction * 1e15) / 1e15;
+            
+            // Special cases for common fractions that cause precision problems
+            const specialFractions = {
+                0.1: {2: '00011', 8: '06314', 16: '19999'},
+                0.2: {2: '00110', 8: '14631', 16: '33333'},
+                0.25: {2: '01', 8: '2', 16: '4'},
+                0.3: {2: '01001', 8: '23146', 16: '4CCCC'},
+                0.4: {2: '01100', 8: '31463', 16: '66666'},
+                0.5: {2: '1', 8: '4', 16: '8'},
+                0.6: {2: '10011', 8: '46314', 16: '99999'},
+                0.7: {2: '10110', 8: '54631', 16: 'B3333'},
+                0.75: {2: '11', 8: '6', 16: 'C'},
+                0.8: {2: '11001', 8: '63146', 16: 'CCCCC'},
+                0.9: {2: '11100', 8: '71463', 16: 'E6666'}
+            };
+            
+            // Check if the fraction is close to a known special case
+            for (const [special, values] of Object.entries(specialFractions)) {
+                if (Math.abs(fraction - parseFloat(special)) < 1e-10) {
+                    return values[base] || convertFractionUsingAlgorithm(fraction, base);
+                }
+            }
+            
+            return convertFractionUsingAlgorithm(fraction, base);
+        }
+        
+        // Algorithm for converting fractions to different bases
+        function convertFractionUsingAlgorithm(fraction, base) {
+            let result = '';
+            const precision = 8; // Limit digits after the point
+            
+            // Small epsilon to handle floating point errors
+            const epsilon = 1e-15;
+            
+            for (let i = 0; i < precision && Math.abs(fraction) > epsilon; i++) {
+                fraction *= base;
+                // Apply a tiny epsilon to avoid floating point errors
+                const digit = Math.floor(fraction + epsilon);
+                
+                // Convert digit to the appropriate character for the base
+                if (base === 16 && digit > 9) {
+                    result += String.fromCharCode('A'.charCodeAt(0) + digit - 10);
+                } else {
+                    result += digit.toString(base);
+                }
+                
+                fraction -= digit;
+                
+                // Exit early if we reach zero with high precision
+                if (Math.abs(fraction) < epsilon) break;
+            }
+            
+            return result || '0';
+        }
+        
+        function appendValue(value) {
+            // Special handling for decimal point
+            if (value === '.') {
+                if (currentBase !== 10) {
+                    // Only allow decimal point in base 10
+                    return;
+                }
+                if (input.value.includes('.')) {
+                    // Don't allow multiple decimal points
+                    return;
+                }
+                if (input.value === '') {
+                    // Add a leading zero if input is empty
+                    input.value = '0';
+                }
+                input.value += '.';
+                return;
+            }
+            
+            if (!isValidDigit(value)) return;
+            input.value += value;
+            updateAllBases();
+        }
+
+        function appendOperator(operator) {
+            input.value += " " + operator + " ";
+        }
+
+        function deleteLast() {
+            input.value = input.value.slice(0, -1);
+            updateAllBases();
+        }
+
+        function clearInput() {
+            input.value = "";
+            updateAllBases();
+        }
+
+        function invert() {
+            if (input.value.trim() === '') return;
+            
+            // Only invert integer values
+            if (input.value.includes('.')) {
+                input.value = "Error: Cannot apply NOT to fractional value";
+                return;
+            }
+            
+            let value = parseInt(input.value, currentBase);
+            value = ~value;
+            input.value = value.toString(currentBase).toUpperCase();
+            updateAllBases();
+        }
+        
+        function toggleSign() {
+            if (input.value.trim() === '') return;
+            
+            let value;
+            if (input.value.includes('.')) {
+                const parts = input.value.split('.');
+                const integerPart = parts[0] === '' ? 0 : parseInt(parts[0], currentBase);
+                
+                // Handle fractional part if exists
+                let fractionPart = 0;
+                if (parts.length > 1 && parts[1] !== '') {
+                    const fractionalStr = parts[1];
+                    for (let i = 0; i < fractionalStr.length; i++) {
+                        const digit = parseInt(fractionalStr[i], currentBase);
+                        if (isNaN(digit)) continue;
+                        fractionPart += digit * Math.pow(currentBase, -(i+1));
+                    }
+                }
+                
+                value = -(integerPart + fractionPart);
+                
+                // Convert to string representation
+                const newIntegerPart = Math.floor(Math.abs(value));
+                let newValue = (value < 0 ? '-' : '') + newIntegerPart.toString(currentBase).toUpperCase();
+                
+                // Add fractional part if needed
+                const newFractionPart = Math.abs(value) - newIntegerPart;
+                if (newFractionPart > 0) {
+                    newValue += '.' + convertFractionToBase(newFractionPart, currentBase).toUpperCase();
+                }
+                
+                input.value = newValue;
+            } else {
+                value = parseInt(input.value, currentBase);
+                value = -value;
+                input.value = value.toString(currentBase).toUpperCase();
+            }
+            
+            updateAllBases();
+        }
+
+        function memoryStore() {
+            if (input.value.trim() === '') return;
+            
+            if (input.value.includes('.')) {
+                const parts = input.value.split('.');
+                const integerPart = parts[0] === '' ? 0 : parseInt(parts[0], currentBase);
+                
+                // Handle fractional part
+                let fractionPart = 0;
+                if (parts.length > 1 && parts[1] !== '') {
+                    const fractionalStr = parts[1];
+                    for (let i = 0; i < fractionalStr.length; i++) {
+                        const digit = parseInt(fractionalStr[i], currentBase);
+                        if (isNaN(digit)) continue;
+                        fractionPart += digit * Math.pow(currentBase, -(i+1));
+                    }
+                }
+                
+                memory = integerPart + fractionPart;
+            } else {
+                memory = parseInt(input.value, currentBase);
+            }
+        }
+
+        function memoryRecall() {
+            if (Number.isInteger(memory)) {
+                input.value = memory.toString(currentBase).toUpperCase();
+            } else {
+                // Handle fractional memory value
+                const integerPart = Math.floor(Math.abs(memory));
+                let result = (memory < 0 ? '-' : '') + integerPart.toString(currentBase).toUpperCase();
+                
+                // Add fractional part
+                const fractionPart = Math.abs(memory) - integerPart;
+                if (fractionPart > 0) {
+                    result += '.' + convertFractionToBase(fractionPart, currentBase).toUpperCase();
+                }
+                
+                input.value = result;
+            }
+            
+            updateAllBases();
+        }
+
+        function memoryClear() {
+            memory = 0;
+        }
+
+        function calculate() {
+            try {
+                let expression = input.value
+                    .replace(/AND/g, "&")
+                    .replace(/OR/g, "|")
+                    .replace(/XOR/g, "^")
+                    .replace(/<< /g, "<<")
+                    .replace(/>> /g, ">>")
+                    .replace(/MOD/g, "%");
+
+                // Handle numbers with radix points in the expression
+                expression = expression.replace(/\b([A-F0-9]+(?:\.[A-F0-9]*)?)\b/gi, (match) => {
+                    if (currentBase === 10) {
+                        return match; // Keep as is for base 10
+                    } else {
+                        // Convert the number from current base to decimal
+                        if (match.includes('.')) {
+                            const parts = match.split('.');
+                            let value = parseInt(parts[0], currentBase) || 0;
+                            
+                            // Add fractional part
+                            if (parts.length > 1 && parts[1] !== '') {
+                                const fractionalStr = parts[1];
+                                for (let i = 0; i < fractionalStr.length; i++) {
+                                    const digit = parseInt(fractionalStr[i], currentBase);
+                                    if (isNaN(digit)) continue;
+                                    value += digit * Math.pow(currentBase, -(i+1));
+                                }
+                            }
+                            
+                            return value;
+                        } else if (currentBase === 16 && /[A-F]/i.test(match)) {
+                            return "0x" + match; // Prefix hex with 0x
+                        } else {
+                            return parseInt(match, currentBase); // Convert to decimal for calculation
+                        }
+                    }
+                });
+
+                let result = eval(expression);
+                
+                // Format the result with precision handling for all bases
+                let formattedResult;
+                
+                if (Number.isInteger(result)) {
+                    // Integer result
+                    formattedResult = result.toString(currentBase).toUpperCase();
+                } else {
+                    // Fractional result
+                    const integerPart = Math.floor(Math.abs(result));
+                    formattedResult = (result < 0 ? '-' : '') + integerPart.toString(currentBase).toUpperCase();
+                    
+                    // Add fractional part using enhanced conversion
+                    const fractionPart = Math.abs(result) - integerPart;
+                    if (fractionPart > 0) {
+                        formattedResult += '.' + convertFractionToBase(fractionPart, currentBase).toUpperCase();
+                    }
+                }
+                
+                // Add to history
+                addToHistory(input.value, formattedResult);
+                
+                // Update display
+                input.value = formattedResult;
+                updateAllBases();
+            } catch (e) {
+                input.value = "Error";
+                console.error(e); // Log the error for debugging
+            }
+        }
+
+        function isValidDigit(value) {
+            if (value === '.') return true; // Radix point is valid in all bases
+            if (currentBase === 2) return /^[01]$/.test(value);
+            if (currentBase === 8) return /^[0-7]$/.test(value);
+            if (currentBase === 10) return /^[0-9]$/.test(value);
+            if (currentBase === 16) return /^[0-9A-F]$/.test(value);
+            return false;
+        }
+
+        function updateButtonStates() {
+            const digitButtons = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
+            
+            // Handle digit buttons
+            digitButtons.forEach(digit => {
+                const button = document.getElementById(`btn-${digit}`);
+                if (button) {
+                    if (isValidDigit(digit)) {
+                        button.classList.remove('disabled');
+                    } else {
+                        button.classList.add('disabled');
+                    }
+                }
+            });
+            
+            // Handle decimal point button - always enabled now
+            const decimalButton = document.getElementById('btn-decimal');
+            if (decimalButton) {
+                decimalButton.classList.remove('disabled');
+            }
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modals = document.getElementsByClassName('modal');
+            for (let i = 0; i < modals.length; i++) {
+                if (event.target === modals[i]) {
+                    modals[i].style.display = 'none';
+                }
+            }
+        };
+
+        // Initialize
+        updateButtonStates();
+    </script>
+
+</body>
+</html>

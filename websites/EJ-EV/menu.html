@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<!--   Bob Robles 2023                -->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      background-image: url("background.jpeg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    .title {
+      text-shadow: 2px 2px 4px #000000;
+      /* Black shadow to make the title stand out */
+      font-size: 48px;
+      text-align: center;
+      margin: 20px 0;
+      background-color: rgba(100%, 100%, 87.8%, 0.8);
+      /* Semi-transparent white background for readability */
+      padding: 5px 10px;
+      border-radius: 10px;
+      /* Optional: to give the background a rounded look */
+    }
+    .menu {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    .menu-item {
+      width: 200px;
+      height: 100px;
+      border: 2px solid black;
+      border-radius: 10px;
+      margin: 10px;
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 70px;
+      cursor: pointer;
+      background-color: yellow;
+    }
+    .menu-item:hover {
+      background-color: lightblue;
+    }
+    .title, .menu-item {
+      font-family: 'Permanent Marker', serif;
+    }
+    .user-dropdown {
+      margin: 10px;
+      padding: 5px;
+      font-size: 24px;
+      text-align: center;
+      width: 280px;
+      height: 50px;
+      border: 2px solid black;
+      border-radius: 10px;
+      background-color: yellow;
+      font-family: 'Permanent Marker', serif;
+      cursor: pointer;
+    }
+    .user-dropdown:focus {
+      outline: none;
+      background-color: lightblue;
+    }
+    .blinking {
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+.blinking-green {
+  animation: blink-green 1s infinite;
+}
+
+@keyframes blink-green {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+  </style>
+</head>
+<body>
+  <div class="title">
+    Menu
+  </div>
+  <div class="menu">
+    <select class="user-dropdown" onchange="selectUser(this.value)">
+      <option value="Playing?" class="blinking blinking-green">Who's Playing?</option>
+      <option value="Emily Jo" data-nickname="E J ">Emily Jo</option>
+      <option value="Everlee Marie" data-nickname="E V ">Everlee Marie</option>
+    </select>
+    <div class="menu-item" onclick="openGame('Trace')">
+      Trace
+    </div>
+    <div class="menu-item" onclick="openGame('Maze')">
+      Maze
+    </div>
+    <div class="menu-item" onclick="openGame('Bubbles')">
+      Bubbles
+    </div>
+    <div class="menu-item" onclick="openGame('AlphabetSearch')">
+      Alphabet
+    </div>
+    <div class="menu-item" onclick="openGame('speakText')">
+      Speak
+    </div>
+    <div class="menu-item" onclick="openGame('AnimalSoundsMatch')">
+      Match
+    </div>
+    <div class="menu-item" onclick="openGame('Scribble')">
+      Scribble
+    </div>
+  </div>
+  <script>
+    var currentUser = '';
+
+    function selectUser(userName) {
+      var userOption = document.querySelector('.user-dropdown').selectedOptions[0];
+      var nickname = userOption.getAttribute('data-nickname');
+      currentUser = userName;
+      if (userName !== '') {
+        document.querySelector('.user-dropdown').blur();
+        speak('Hi ' + userName + ', Welcome');
+      }
+        // Remove the "blinking-green" class when a player is selected
+        document.querySelector('.user-dropdown option[value="Playing?"]').classList.remove('blinking-green');
+    }
+
+    function openGame(gameName) {
+      if (currentUser === '') {
+        alert('Please select a user first.');
+        return;
+      }
+      var userOption = document.querySelector('.user-dropdown').selectedOptions[0];
+      var nickname = userOption.getAttribute('data-nickname');
+      window.open(gameName + "/" + gameName + ".html?user=" + encodeURIComponent(currentUser) + "&nickname=" + encodeURIComponent(nickname));
+    }
+    function speak(text) {
+      var utterance = new SpeechSynthesisUtterance(text);
+      speechSynthesis.speak(utterance);
+    }
+
+  </script>
+</body>
+</html>
