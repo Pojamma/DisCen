@@ -125,6 +125,35 @@
             color: #666;
         }
         
+        .url-section {
+            margin-bottom: 20px;
+        }
+
+        .url-input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .url-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            transition: border-color 0.3s ease;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .url-input-row button {
+            min-width: 100px;
+        }
+
         .controls {
             display: flex;
             gap: 15px;
@@ -176,6 +205,16 @@
             background: #218838;
             transform: translateY(-2px);
             box-shadow: 0 6px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-sample {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            color: white;
+        }
+
+        .btn-sample:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(245, 87, 108, 0.3);
         }
         
         .output-section {
@@ -330,10 +369,22 @@ console.log('Hello, World!');
             </div>
         </div>
         
+        <div class="url-section">
+            <div class="input-group">
+                <h3>🔗 Load from URL</h3>
+                <div class="url-input-row">
+                    <input type="text" id="urlInput" class="url-input" placeholder="https://example.com/document.md">
+                    <button class="btn-primary" onclick="loadFromURL()">Load</button>
+                </div>
+                <div class="file-info" id="urlInfo"></div>
+            </div>
+        </div>
+
         <div class="controls">
             <button class="btn-primary" onclick="displayMarkdown()">🚀 Display Formatted</button>
             <button class="btn-secondary" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
             <button class="btn-success" onclick="saveAsHTML()">💾 Save As HTML</button>
+            <button class="btn-sample" onclick="loadSampleMarkdown()">📄 Sample Markdown</button>
         </div>
         
         <div class="output-section">
@@ -603,6 +654,232 @@ ${output.innerHTML}
             }, 3000);
         }
         
+        function loadFromURL() {
+            const urlInput = document.getElementById('urlInput');
+            const urlInfo = document.getElementById('urlInfo');
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                showToast('Please enter a URL first!', 'error');
+                return;
+            }
+
+            try {
+                new URL(url);
+            } catch {
+                showToast('Please enter a valid URL!', 'error');
+                return;
+            }
+
+            urlInfo.textContent = 'Loading...';
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    textInput.value = text;
+                    urlInfo.textContent = `Loaded from: ${url}`;
+                    showToast('Document loaded successfully!');
+                })
+                .catch(error => {
+                    urlInfo.textContent = '';
+                    showToast('Failed to load: ' + error.message, 'error');
+                });
+        }
+
+        // Allow pressing Enter in the URL input to trigger load
+        document.getElementById('urlInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                loadFromURL();
+            }
+        });
+
+        function loadSampleMarkdown() {
+            const sample = `# Markdown Formatting Guide
+
+## Headings
+
+# Heading 1
+## Heading 2
+### Heading 3
+#### Heading 4
+##### Heading 5
+###### Heading 6
+
+---
+
+## Text Formatting
+
+This is **bold text** and this is *italic text*.
+
+You can also use __bold__ and _italic_ with underscores.
+
+***Bold and italic*** combined.
+
+~~Strikethrough~~ text.
+
+---
+
+## Links and Images
+
+[Inline link](https://example.com)
+
+[Link with title](https://example.com "Example Site")
+
+![Alt text for image](https://via.placeholder.com/150 "Placeholder Image")
+
+---
+
+## Lists
+
+### Unordered List
+- Item one
+- Item two
+  - Nested item A
+  - Nested item B
+- Item three
+
+### Ordered List
+1. First item
+2. Second item
+   1. Sub-item one
+   2. Sub-item two
+3. Third item
+
+### Task List
+- [x] Completed task
+- [x] Another done task
+- [ ] Pending task
+- [ ] Another pending task
+
+---
+
+## Blockquotes
+
+> This is a blockquote.
+>
+> It can span multiple paragraphs.
+>
+> > And can be nested.
+
+---
+
+## Code
+
+Inline code: \`const x = 42;\`
+
+### JavaScript
+\`\`\`javascript
+function greet(name) {
+    console.log(\`Hello, \${name}!\`);
+    return { message: "Welcome" };
+}
+greet("World");
+\`\`\`
+
+### Python
+\`\`\`python
+def fibonacci(n):
+    a, b = 0, 1
+    for _ in range(n):
+        yield a
+        a, b = b, a + b
+
+for num in fibonacci(10):
+    print(num)
+\`\`\`
+
+### HTML
+\`\`\`html
+<div class="container">
+    <h1>Hello World</h1>
+    <p>This is a paragraph.</p>
+</div>
+\`\`\`
+
+---
+
+## Tables
+
+| Feature       | Status    | Priority |
+|---------------|-----------|----------|
+| Dark Mode     | Done      | High     |
+| Search        | In Progress | Medium |
+| Export PDF    | Planned   | Low      |
+| Mobile View   | Done      | High     |
+
+### Right-Aligned Table
+
+| Item          | Quantity |   Price |
+|:--------------|:--------:|--------:|
+| Apples        |    5     |  $1.20  |
+| Bananas       |   12     |  $0.50  |
+| Cherries      |   30     |  $3.00  |
+| **Total**     |  **47**  | **$4.70** |
+
+---
+
+## Horizontal Rules
+
+Three ways to make a horizontal rule:
+
+---
+***
+___
+
+---
+
+## Footnotes
+
+Here is a sentence with a footnote[^1].
+
+And another one[^2].
+
+[^1]: This is the first footnote.
+[^2]: This is the second footnote with more detail.
+
+---
+
+## Escaping Characters
+
+Use a backslash to show literal characters:
+
+\\*Not italic\\* and \\*\\*not bold\\*\\*
+
+\\# Not a heading
+
+\\- Not a list item
+
+---
+
+## HTML in Markdown
+
+<details>
+<summary>Click to expand</summary>
+
+This content is hidden by default.
+
+- You can put any markdown here
+- Including **formatted** text
+
+</details>
+
+<mark>Highlighted text</mark>
+
+Text with <sup>superscript</sup> and <sub>subscript</sub>.
+
+---
+
+*This sample demonstrates the most commonly used Markdown formatting options.*`;
+
+            textInput.value = sample;
+            showToast('Sample markdown loaded!');
+        }
+
         // Initialize with sample content display
         window.addEventListener('load', function() {
             // Small delay to ensure marked.js is loaded
