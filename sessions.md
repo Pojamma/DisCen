@@ -37,3 +37,22 @@ Initial project creation. Migrated web applications from ProBiz to DisCen (Distr
 
 ### Commits
 - `89851f3` — Initial commit: Distraction Central
+
+## Session 2026-07-17 19:30 PDT
+
+### Summary
+Enhanced the Markdown Text Formatter with load-from-URL and sample markdown features.
+
+### Changes
+- Added "Load from URL" input section — fetches remote markdown files and loads them into the editor
+- Added "Sample Markdown" button — populates the editor with a comprehensive formatting reference (headings, text styles, lists, tables, code blocks, blockquotes, footnotes, HTML-in-markdown)
+- Added auto-conversion of git host URLs to raw equivalents for CORS compatibility:
+  - GitHub blob → raw.githubusercontent.com
+  - GitHub Gists → gist.githubusercontent.com
+  - GitLab blob → gitlab.com raw
+  - Bitbucket src → bitbucket.org raw
+
+### Commits
+- `07ed664` — Add load-from-URL and sample markdown features to markdown viewer
+- `547c491` — Auto-convert GitHub blob URLs to raw URLs in markdown viewer
+- `1017664` — Add GitLab, Bitbucket, and Gist URL auto-conversion in markdown viewer
