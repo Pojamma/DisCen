@@ -664,16 +664,25 @@ ${output.innerHTML}
                 return;
             }
 
+            let parsedURL;
             try {
-                new URL(url);
+                parsedURL = new URL(url);
             } catch {
                 showToast('Please enter a valid URL!', 'error');
                 return;
             }
 
+            // Convert GitHub blob/tree URLs to raw.githubusercontent.com
+            let fetchURL = url;
+            const ghMatch = parsedURL.hostname === 'github.com' &&
+                parsedURL.pathname.match(/^\/([^/]+)\/([^/]+)\/blob\/(.+)$/);
+            if (ghMatch) {
+                fetchURL = `https://raw.githubusercontent.com/${ghMatch[1]}/${ghMatch[2]}/${ghMatch[3]}`;
+            }
+
             urlInfo.textContent = 'Loading...';
 
-            fetch(url)
+            fetch(fetchURL)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
