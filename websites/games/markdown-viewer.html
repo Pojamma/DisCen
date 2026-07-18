@@ -672,12 +672,20 @@ ${output.innerHTML}
                 return;
             }
 
-            // Convert GitHub blob/tree URLs to raw.githubusercontent.com
+            // Convert git host URLs to their raw equivalents for CORS
             let fetchURL = url;
-            const ghMatch = parsedURL.hostname === 'github.com' &&
-                parsedURL.pathname.match(/^\/([^/]+)\/([^/]+)\/blob\/(.+)$/);
-            if (ghMatch) {
-                fetchURL = `https://raw.githubusercontent.com/${ghMatch[1]}/${ghMatch[2]}/${ghMatch[3]}`;
+            const host = parsedURL.hostname;
+            const path = parsedURL.pathname;
+            let m;
+
+            if (host === 'github.com' && (m = path.match(/^\/([^/]+)\/([^/]+)\/blob\/(.+)$/))) {
+                fetchURL = `https://raw.githubusercontent.com/${m[1]}/${m[2]}/${m[3]}`;
+            } else if (host === 'gist.github.com' && (m = path.match(/^\/([^/]+)\/([^/]+)\/?$/))) {
+                fetchURL = `https://gist.githubusercontent.com/${m[1]}/${m[2]}/raw`;
+            } else if (host === 'gitlab.com' && (m = path.match(/^\/(.+)\/-\/blob\/(.+)$/))) {
+                fetchURL = `https://gitlab.com/${m[1]}/-/raw/${m[2]}`;
+            } else if (host === 'bitbucket.org' && (m = path.match(/^\/([^/]+)\/([^/]+)\/src\/(.+)$/))) {
+                fetchURL = `https://bitbucket.org/${m[1]}/${m[2]}/raw/${m[3]}`;
             }
 
             urlInfo.textContent = 'Loading...';
