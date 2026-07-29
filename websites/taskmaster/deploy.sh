@@ -25,6 +25,6 @@ fi
 
 # Deploy to server
 echo "Deploying to $SSH_HOST..."
-ssh "$SSH_HOST" "cd $REMOTE_DIR && git pull && sudo restorecon -Rv $REMOTE_DIR/websites/task_master && sudo systemctl reload nginx"
+ssh "$SSH_HOST" "cd $REMOTE_DIR && git pull && sudo restorecon -Rv $REMOTE_DIR/websites/taskmaster && sudo systemctl reload nginx"
 
 echo "Deploy complete."

@@ -56,3 +56,22 @@ Enhanced the Markdown Text Formatter with load-from-URL and sample markdown feat
 - `07ed664` — Add load-from-URL and sample markdown features to markdown viewer
 - `547c491` — Auto-convert GitHub blob URLs to raw URLs in markdown viewer
 - `1017664` — Add GitLab, Bitbucket, and Gist URL auto-conversion in markdown viewer
+
+## Session 2026-07-28 PDT
+
+### Summary
+Renamed `websites/task_master/` directory to `websites/taskmaster/` and updated all references across the project.
+
+### Changes
+- Renamed directory `websites/task_master/` to `websites/taskmaster/` via `git mv`
+- Updated main menu link path in `websites/main/public/index.html`
+- Updated nginx location block and alias in `discen.conf`
+- Updated deploy script restorecon path in `websites/taskmaster/deploy.sh`
+- Updated file structure diagram in `websites/taskmaster/README.md`
+- Updated dev server path in `websites/taskmaster/test_server.sh`
+- Updated permission pattern in `.claude/settings.local.json`
+- Left `sessions.md` historical entries and `task_master.json` filename/export prefixes unchanged (product name, not directory references)
+
+### Deployment Notes
+- Server nginx config (`/etc/nginx/conf.d/discen.conf`) needs to be updated to match the new `discen.conf`
+- Run `sudo restorecon -Rv /home/opc/DisCen/websites/taskmaster` for SELinux after deploy

@@ -57,7 +57,7 @@ The system recognizes various checkbox formats in markdown files:
 ## 📁 File Structure
 
 ```
-task_master/
+taskmaster/
 ├── task_manager.html          # Main application interface
 ├── task_manager.js           # Core application logic
 ├── task_master.json          # Master file format example
