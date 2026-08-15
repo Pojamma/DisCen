@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scrabble</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===== Setup Screen ===== -->
+  <div id="setup-screen">
+    <h1>SCRABBLE</h1>
+
+    <div class="setup-row">
+      <div class="setup-group">
+        <label for="p1-name">Player 1 Name</label>
+        <input type="text" id="p1-name" value="Player 1" maxlength="20">
+      </div>
+      <div class="setup-group">
+        <label for="p1-type">Type</label>
+        <select id="p1-type">
+          <option value="human">Human</option>
+          <option value="bot">Bot</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="setup-row">
+      <div class="setup-group">
+        <label for="p2-name">Player 2 Name</label>
+        <input type="text" id="p2-name" value="Player 2" maxlength="20">
+      </div>
+      <div class="setup-group">
+        <label for="p2-type">Type</label>
+        <select id="p2-type">
+          <option value="human">Human</option>
+          <option value="bot" selected>Bot</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="btn-start-game">START GAME</button>
+    <button id="btn-load-setup" class="btn btn-load" style="margin-top:0.5rem;">Load Saved Game</button>
+  </div>
+
+  <!-- ===== Game Container ===== -->
+  <div id="game-container">
+
+    <!-- Scoreboard -->
+    <div id="scoreboard">
+      <div id="player0-score" class="player-score">
+        <div class="name">Player 1</div>
+        <div class="score">0</div>
+      </div>
+      <div style="text-align:center;">
+        <div id="turn-indicator">Turn 1</div>
+        <div id="bag-count">Bag: 100 tiles</div>
+      </div>
+      <div id="player1-score" class="player-score">
+        <div class="name">Player 2</div>
+        <div class="score">0</div>
+      </div>
+    </div>
+
+    <!-- Game Over Banner -->
+    <div id="game-over-banner">
+      <h2>Game Over</h2>
+      <div class="final-scores"></div>
+    </div>
+
+    <!-- Board -->
+    <div id="board-wrapper">
+      <div id="board"></div>
+    </div>
+
+    <!-- Exchange Mode Banner -->
+    <div id="exchange-banner">Click tiles in your rack to select them for exchange, then press "Confirm Exchange"</div>
+
+    <!-- Rack -->
+    <div id="rack-area">
+      <div id="rack"></div>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls">
+      <button id="btn-play" class="btn btn-play" disabled>Play</button>
+      <button id="btn-exchange" class="btn btn-exchange">Exchange</button>
+      <button id="btn-pass" class="btn btn-pass">Pass</button>
+      <button id="btn-shuffle" class="btn btn-shuffle">Shuffle</button>
+      <button id="btn-recall" class="btn btn-recall" disabled>Recall</button>
+      <button id="btn-save" class="btn btn-save">Save</button>
+      <button id="btn-load" class="btn btn-load">Load</button>
+      <button id="btn-new-game" class="btn btn-new">New Game</button>
+    </div>
+
+    <!-- Game Log -->
+    <div id="log-area">
+      <h3 id="log-header">Game Log (click to toggle)</h3>
+      <div id="game-log"></div>
+    </div>
+  </div>
+
+  <!-- ===== Blank Tile Modal ===== -->
+  <div id="blank-modal" class="modal-overlay">
+    <div class="modal">
+      <h2>Choose a letter for the blank tile</h2>
+      <div id="blank-letter-grid" class="letter-grid"></div>
+      <div class="modal-buttons">
+        <button id="blank-modal-close" class="btn btn-pass">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Load Game Modal ===== -->
+  <div id="load-modal" class="modal-overlay">
+    <div class="modal">
+      <h2>Load Saved Game</h2>
+      <ul id="save-list" class="save-list"></ul>
+      <div class="modal-buttons">
+        <button id="load-modal-close" class="btn btn-pass">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
