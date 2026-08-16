@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Three Little Kittens</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
+            background-color: #FFF9E6;
+            min-height: 100vh;
+        }
+
+        /* Scrollable Main Container */
+        .page-container {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+            overflow-y: auto; /* Enables vertical scrolling */
+        }
+
+        /* Picture Box & Side-Tap Zones */
+        .image-box {
+            position: relative;
+            width: 100%;
+            max-width: 550px;
+            height: 320px;
+            background-color: #E2F0D9;
+            border: 6px dashed #70AD47;
+            border-radius: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .image-box img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 15px;
+            object-fit: contain;
+            pointer-events: none; /* Passes taps to the touch zones */
+        }
+
+        .image-box p {
+            font-size: 1.2rem;
+            color: #555;
+            margin: 0;
+            pointer-events: none;
+        }
+
+        /* One permanent slide per page: built once, shown/hidden only */
+        .slide {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide.is-hidden {
+            display: none;
+        }
+
+        /* Touch Zones over Picture Only */
+        .pic-nav-zone {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 50%;
+            z-index: 5;
+            cursor: pointer;
+        }
+
+        #pic-left-zone {
+            left: 0;
+        }
+
+        #pic-right-zone {
+            right: 0;
+        }
+
+        /* Visual cue for tapping picture sides */
+        .pic-nav-zone:active {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Read Page Button */
+        .read-btn {
+            background-color: #FF6F61;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            box-shadow: 0 8px 0 #D64535;
+            cursor: pointer;
+            margin: 10px 0 20px 0;
+            transition: transform 0.1s;
+        }
+
+        .read-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #D64535;
+        }
+
+        /* Story Text Area */
+        .text-box {
+            text-align: center;
+            padding: 10px;
+            max-width: 900px;
+            margin-bottom: 30px;
+        }
+
+        /* Word Styling */
+        .word {
+            display: inline-block;
+            font-size: 3.2rem;
+            font-weight: bold;
+            color: #2E4057;
+            margin: 4px 8px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        .word:active, .word.highlight {
+            background-color: #FFE66D;
+            color: #000;
+            transform: scale(1.1);
+        }
+
+        /* Page Indicator */
+        .page-num {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #777;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-container">
+        <!-- Picture Top with Tap Zones -->
+        <div class="image-box">
+            <div id="pic-left-zone" class="pic-nav-zone" onclick="prevPage()"></div>
+            <div id="pic-right-zone" class="pic-nav-zone" onclick="nextPage()"></div>
+            
+            <div id="img-content" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+                <!-- Image loaded here -->
+            </div>
+        </div>
+
+        <!-- Read Page Button -->
+        <button class="read-btn" onclick="readFullPage()">🔊 Read To Me</button>
+
+        <!-- Story Text Bottom -->
+        <div class="text-box" id="text-container">
+            <!-- Interactive text loaded here -->
+        </div>
+
+        <div class="page-num" id="page-num">Page 1</div>
+    </div>
+
+    <script>
+        const story = [
+            {
+                text: "Three little kittens loved to play. Two sisters and one brother!",
+                img: "kittens_intro.png",
+                alt: "[ Picture: Tap Left/Right side of photo to turn page ]"
+            },
+            {
+                text: "They liked big sports. They loved to run and jump!",
+                img: "kittens_sports.png",
+                alt: "[ Picture: Kittens getting ready to play ]"
+            },
+            {
+                text: "The sisters went rock climbing up a high hill. Up, up, up!",
+                img: "kittens_climbing.png",
+                alt: "[ Picture: Two sister kittens climbing rocks ]"
+            },
+            {
+                text: "The brother loved to dance. He did a big spin!",
+                img: "kittens_dancing.png",
+                alt: "[ Picture: Brother kitten dancing happily ]"
+            },
+            {
+                text: "They all went on a long hike. They saw a fun trail!",
+                img: "kittens_hiking.png",
+                alt: "[ Picture: 3 Kittens hiking with small packs ]"
+            },
+            {
+                text: "Catch that ball! They played soccer in the green grass.",
+                img: "kittens_soccer.png",
+                alt: "[ Picture: Kittens kicking a soccer ball ]"
+            },
+            {
+                text: "Look at the big wave! The kittens went surfing on the water.",
+                img: "kittens_surfing.png",
+                alt: "[ Picture: Kittens riding surfboards ]"
+            },
+            {
+                text: "Good job, kittens! Time for a big nap.",
+                img: "kittens_nap.png",
+                alt: "[ Picture: 3 Tired kittens sleeping together ]"
+            }
+        ];
+
+        let currentPage = 0;
+        const synth = window.speechSynthesis;
+        const MAX_RETRIES = 3;
+
+        // Keeps the encoded image data alive in memory for the whole session
+        // so the browser never has to re-fetch a picture you already saw.
+        const memoryCache = [];
+
+        // Build every slide ONCE at startup. Page turns only toggle visibility,
+        // so an <img> that already loaded can never be thrown away and re-requested.
+        const slides = story.map(page => {
+            const wrap = document.createElement('div');
+            wrap.className = 'slide is-hidden';
+
+            const img = document.createElement('img');
+            img.alt = 'Kitten Picture';
+            img.decoding = 'sync';
+            img.loading = 'eager';
+
+            const fallback = document.createElement('p');
+            fallback.textContent = page.alt;
+            fallback.style.display = 'none';
+
+            const slide = { wrap, img, fallback, src: page.img, tries: 0 };
+
+            img.addEventListener('load', () => {
+                img.style.display = '';
+                fallback.style.display = 'none';
+            });
+            img.addEventListener('error', () => retryImage(slide));
+
+            wrap.append(img, fallback);
+            document.getElementById('img-content').appendChild(wrap);
+
+            loadImage(slide);
+            memoryCache.push(img);
+            return slide;
+        });
+
+        function loadImage(slide) {
+            // Cache-busting suffix only on retries, so the first load stays cacheable
+            slide.img.src = slide.tries === 0
+                ? slide.src
+                : `${slide.src}?reload=${slide.tries}`;
+        }
+
+        function retryImage(slide) {
+            if (slide.tries < MAX_RETRIES) {
+                slide.tries++;
+                setTimeout(() => loadImage(slide), 300 * slide.tries);
+            } else {
+                slide.img.style.display = 'none';
+                slide.fallback.style.display = 'block';
+            }
+        }
+
+        // Catches the silent failure: no error event fired, but nothing painted.
+        function verifyImage(slide) {
+            if (slide.img.complete && slide.img.naturalWidth === 0) {
+                retryImage(slide);
+            }
+        }
+
+        function loadPage() {
+            synth.cancel(); // Stop speech when moving pages
+            const p = story[currentPage];
+
+            // Show this page's picture, hide the rest
+            slides.forEach((slide, i) => {
+                slide.wrap.classList.toggle('is-hidden', i !== currentPage);
+            });
+            verifyImage(slides[currentPage]);
+            setTimeout(() => verifyImage(slides[currentPage]), 1200);
+
+            // Render Text as clickable words
+            const textContainer = document.getElementById('text-container');
+            const words = p.text.split(' ');
+
+            textContainer.innerHTML = words.map(word => {
+                // Clean punctuation for TTS speech call
+                const cleanWord = word.replace(/[^a-zA-Z]/g, "");
+                return `<span class="word" onclick="speakWord(event, '${cleanWord}')">${word}</span>`;
+            }).join(' ');
+
+            document.getElementById('page-num').innerText = `Page ${currentPage + 1} of ${story.length}`;
+
+            // Scroll back to top on page turn
+            window.scrollTo(0, 0);
+        }
+
+        function speakWord(event, word) {
+            event.stopPropagation(); // Prevents any background click triggers
+            if (!word) return;
+            
+            synth.cancel();
+            const utterance = new SpeechSynthesisUtterance(word);
+            utterance.rate = 0.8; // Clear, slow reading speed
+            
+            const element = event.currentTarget;
+            element.classList.add('highlight');
+            utterance.onend = () => element.classList.remove('highlight');
+            
+            synth.speak(utterance);
+        }
+
+        function readFullPage() {
+            synth.cancel();
+            const fullText = story[currentPage].text;
+            const utterance = new SpeechSynthesisUtterance(fullText);
+            utterance.rate = 0.85; 
+            synth.speak(utterance);
+        }
+
+        // Small guard so a bouncy tablet tap doesn't fire two page turns
+        let lastTurn = 0;
+        function tapAccepted() {
+            const now = Date.now();
+            if (now - lastTurn < 250) return false;
+            lastTurn = now;
+            return true;
+        }
+
+        function nextPage() {
+            if (!tapAccepted()) return;
+            if (currentPage < story.length - 1) {
+                currentPage++;
+                loadPage();
+            }
+        }
+
+        function prevPage() {
+            if (!tapAccepted()) return;
+            if (currentPage > 0) {
+                currentPage--;
+                loadPage();
+            }
+        }
+
+        // Initialize first page
+        loadPage();
+    </script>
+</body>
+</html>
