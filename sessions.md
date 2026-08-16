@@ -87,3 +87,17 @@ Added Kitten Story interactive storybook game for young children (age 4) and add
 
 ### Commits
 - `fd08e23` — Add Kitten Story game to menu and games directory
+
+## Session 2026-08-15 21:45 PDT
+
+### Summary
+Added Puppy Sisters Sports Storybook — a 10-page interactive reading storybook for young children about two puppy sisters (Sunny and Sandy) who live by the beach and love sports. Created a reusable storybook template for generating future storybooks with consistent look and feel.
+
+### Changes
+- Created `websites/games/puppy_story/` directory with `puppy_story.html` and 10 claymation-style puppy illustration PNGs
+- Added "Puppy Story" entry to the entertainment section in `websites/main/public/index.html`
+- Created `websites/games/STORYBOOK_TEMPLATE.md` — reusable guide and HTML template for generating future storybooks with consistent styling and features
+- Engagement improvements over kitten_story: pastel page backgrounds, bouncy word animations, fade-in page transitions, star progress indicator, confetti celebration on final page, navigation arrow hints, bigger touch targets, word-by-word highlighting during Read To Me
+
+### Commits
+- `06a19e2` — Add Puppy Sisters Sports Storybook to menu and games directory
