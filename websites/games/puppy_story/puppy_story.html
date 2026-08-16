@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Puppy Sisters Sports Story</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
+            min-height: 100vh;
+            transition: background-color 0.6s ease;
+        }
+
+        /* Scrollable Main Container */
+        .page-container {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* Picture Box & Side-Tap Zones */
+        .image-box {
+            position: relative;
+            width: 100%;
+            max-width: 550px;
+            height: 320px;
+            background-color: #E2F0D9;
+            border: 6px dashed #70AD47;
+            border-radius: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .image-box img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 15px;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .image-box p {
+            font-size: 1.2rem;
+            color: #555;
+            margin: 0;
+            pointer-events: none;
+        }
+
+        /* Slides */
+        .slide {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.4s ease;
+        }
+
+        .slide.is-hidden {
+            display: none;
+        }
+
+        .slide.fade-out {
+            opacity: 0;
+        }
+
+        /* Touch Zones over Picture */
+        .pic-nav-zone {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 50%;
+            z-index: 5;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        #pic-left-zone {
+            left: 0;
+            justify-content: flex-start;
+            padding-left: 8px;
+        }
+
+        #pic-right-zone {
+            right: 0;
+            justify-content: flex-end;
+            padding-right: 8px;
+        }
+
+        .pic-nav-zone:active {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Navigation arrow hints */
+        .nav-arrow {
+            font-size: 2rem;
+            color: rgba(0, 0, 0, 0.15);
+            pointer-events: none;
+            transition: color 0.2s;
+        }
+
+        .pic-nav-zone:active .nav-arrow {
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        /* Read Page Button */
+        .read-btn {
+            background-color: #FF6F61;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            box-shadow: 0 8px 0 #D64535;
+            cursor: pointer;
+            margin: 10px 0 20px 0;
+            transition: transform 0.1s;
+        }
+
+        .read-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #D64535;
+        }
+
+        /* Story Text Area */
+        .text-box {
+            text-align: center;
+            padding: 10px;
+            max-width: 900px;
+            margin-bottom: 20px;
+        }
+
+        /* Word Styling — bigger touch targets for small fingers */
+        .word {
+            display: inline-block;
+            font-size: 3.2rem;
+            font-weight: bold;
+            color: #2E4057;
+            margin: 6px 8px;
+            padding: 8px 14px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: transform 0.15s, background-color 0.15s;
+        }
+
+        .word:active, .word.highlight {
+            background-color: #FFE66D;
+            color: #000;
+            transform: scale(1.1);
+        }
+
+        /* Bounce animation when a word is tapped */
+        @keyframes wordBounce {
+            0%   { transform: scale(1); }
+            30%  { transform: scale(1.25) translateY(-6px); }
+            50%  { transform: scale(1.1) translateY(0); }
+            70%  { transform: scale(1.15) translateY(-3px); }
+            100% { transform: scale(1); }
+        }
+
+        .word.bounce {
+            animation: wordBounce 0.5s ease;
+        }
+
+        /* Star Progress Indicator */
+        .star-progress {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .star {
+            font-size: 1.6rem;
+            transition: transform 0.3s;
+        }
+
+        .star.filled {
+            transform: scale(1.15);
+        }
+
+        /* Confetti celebration on the last page */
+        @keyframes confettiFall {
+            0%   { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .confetti-piece {
+            position: fixed;
+            top: -20px;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            z-index: 100;
+            pointer-events: none;
+            animation: confettiFall linear forwards;
+        }
+
+        /* Page fade transition */
+        .text-box.fade-enter {
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-container">
+        <!-- Picture Top with Tap Zones -->
+        <div class="image-box">
+            <div id="pic-left-zone" class="pic-nav-zone" onclick="prevPage()">
+                <span class="nav-arrow">&#9664;</span>
+            </div>
+            <div id="pic-right-zone" class="pic-nav-zone" onclick="nextPage()">
+                <span class="nav-arrow">&#9654;</span>
+            </div>
+
+            <div id="img-content" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+                <!-- Image slides loaded here -->
+            </div>
+        </div>
+
+        <!-- Read Page Button -->
+        <button class="read-btn" onclick="readFullPage()">&#128266; Read To Me</button>
+
+        <!-- Story Text Bottom -->
+        <div class="text-box" id="text-container">
+            <!-- Interactive text loaded here -->
+        </div>
+
+        <!-- Star Progress -->
+        <div class="star-progress" id="star-progress"></div>
+    </div>
+
+    <script>
+        const story = [
+            {
+                text: "Meet Sunny and Sandy! They are two puppy sisters who live by the beach.",
+                img: "puppy_intro.png",
+                alt: "[ Picture: Two cute puppy sisters at the beach ]",
+                bg: "#FFF9E6"
+            },
+            {
+                text: "The sisters love to play sports. Let's see what they do today!",
+                img: "puppy_sports.png",
+                alt: "[ Picture: Puppies getting ready to play sports ]",
+                bg: "#E6F7FF"
+            },
+            {
+                text: "First they go rock climbing! Up, up, up they go.",
+                img: "puppy_climbing.png",
+                alt: "[ Picture: Puppies climbing up rocks ]",
+                bg: "#FFF0E6"
+            },
+            {
+                text: "Now they dance! They spin and jump and wiggle.",
+                img: "puppy_dancing.png",
+                alt: "[ Picture: Puppies dancing happily ]",
+                bg: "#F0E6FF"
+            },
+            {
+                text: "The puppies go on a hike by the sea. They see birds and pretty flowers!",
+                img: "puppy_hiking.png",
+                alt: "[ Picture: Puppies hiking along a seaside trail ]",
+                bg: "#E6FFE6"
+            },
+            {
+                text: "Time to surf! The puppies ride a big wave. Splash!",
+                img: "puppy_surfing.png",
+                alt: "[ Picture: Puppies surfing on a big wave ]",
+                bg: "#E6FFFA"
+            },
+            {
+                text: "Next they play soccer on the sand. Kick the ball, Sunny!",
+                img: "puppy_soccer.png",
+                alt: "[ Picture: Puppies playing soccer on the beach ]",
+                bg: "#FFFDE6"
+            },
+            {
+                text: "Sandy scores a goal! Yay!",
+                img: "puppy_goal.png",
+                alt: "[ Picture: Sandy the puppy scoring a soccer goal ]",
+                bg: "#FFE6F0"
+            },
+            {
+                text: "What a fun day! The puppy sisters are so happy.",
+                img: "puppy_happy.png",
+                alt: "[ Picture: Two happy puppies at sunset on the beach ]",
+                bg: "#FFF0F5"
+            },
+            {
+                text: "They curl up by the beach. Good night, Sunny and Sandy!",
+                img: "puppy_goodnight.png",
+                alt: "[ Picture: Puppies curled up sleeping on the beach at night ]",
+                bg: "#E6E6FA"
+            }
+        ];
+
+        let currentPage = 0;
+        const synth = window.speechSynthesis;
+        const MAX_RETRIES = 3;
+
+        const memoryCache = [];
+
+        // Build every slide ONCE at startup
+        const slides = story.map(page => {
+            const wrap = document.createElement('div');
+            wrap.className = 'slide is-hidden';
+
+            const img = document.createElement('img');
+            img.alt = 'Puppy Picture';
+            img.decoding = 'sync';
+            img.loading = 'eager';
+
+            const fallback = document.createElement('p');
+            fallback.textContent = page.alt;
+            fallback.style.display = 'none';
+
+            const slide = { wrap, img, fallback, src: page.img, tries: 0 };
+
+            img.addEventListener('load', () => {
+                img.style.display = '';
+                fallback.style.display = 'none';
+            });
+            img.addEventListener('error', () => retryImage(slide));
+
+            wrap.append(img, fallback);
+            document.getElementById('img-content').appendChild(wrap);
+
+            loadImage(slide);
+            memoryCache.push(img);
+            return slide;
+        });
+
+        function loadImage(slide) {
+            slide.img.src = slide.tries === 0
+                ? slide.src
+                : `${slide.src}?reload=${slide.tries}`;
+        }
+
+        function retryImage(slide) {
+            if (slide.tries < MAX_RETRIES) {
+                slide.tries++;
+                setTimeout(() => loadImage(slide), 300 * slide.tries);
+            } else {
+                slide.img.style.display = 'none';
+                slide.fallback.style.display = 'block';
+            }
+        }
+
+        function verifyImage(slide) {
+            if (slide.img.complete && slide.img.naturalWidth === 0) {
+                retryImage(slide);
+            }
+        }
+
+        // Build star progress indicator
+        function buildStars() {
+            const container = document.getElementById('star-progress');
+            container.innerHTML = '';
+            for (let i = 0; i < story.length; i++) {
+                const star = document.createElement('span');
+                star.className = 'star' + (i <= currentPage ? ' filled' : '');
+                star.textContent = i <= currentPage ? '\u2B50' : '\u2606';
+                container.appendChild(star);
+            }
+        }
+
+        function loadPage() {
+            synth.cancel();
+            const p = story[currentPage];
+
+            // Change background color
+            document.body.style.backgroundColor = p.bg;
+
+            // Show this page's slide, hide the rest
+            slides.forEach((slide, i) => {
+                slide.wrap.classList.toggle('is-hidden', i !== currentPage);
+            });
+            verifyImage(slides[currentPage]);
+            setTimeout(() => verifyImage(slides[currentPage]), 1200);
+
+            // Render text as clickable words with fade-in
+            const textContainer = document.getElementById('text-container');
+            const words = p.text.split(' ');
+
+            textContainer.innerHTML = words.map(word => {
+                const cleanWord = word.replace(/[^a-zA-Z']/g, "");
+                return `<span class="word" onclick="speakWord(event, '${cleanWord}')">${word}</span>`;
+            }).join(' ');
+
+            // Fade-in animation
+            textContainer.classList.remove('fade-enter');
+            void textContainer.offsetWidth; // trigger reflow
+            textContainer.classList.add('fade-enter');
+
+            // Update star progress
+            buildStars();
+
+            // Scroll back to top
+            window.scrollTo(0, 0);
+
+            // Celebration on last page
+            if (currentPage === story.length - 1) {
+                launchConfetti();
+            }
+        }
+
+        function speakWord(event, word) {
+            event.stopPropagation();
+            if (!word) return;
+
+            synth.cancel();
+            const utterance = new SpeechSynthesisUtterance(word);
+            utterance.rate = 0.8;
+
+            const element = event.currentTarget;
+            element.classList.add('highlight', 'bounce');
+            utterance.onend = () => {
+                element.classList.remove('highlight');
+            };
+            // Remove bounce class after animation completes
+            element.addEventListener('animationend', () => {
+                element.classList.remove('bounce');
+            }, { once: true });
+
+            synth.speak(utterance);
+        }
+
+        function readFullPage() {
+            synth.cancel();
+            const fullText = story[currentPage].text;
+            const utterance = new SpeechSynthesisUtterance(fullText);
+            utterance.rate = 0.85;
+
+            // Highlight words as they are read
+            const wordEls = document.querySelectorAll('.word');
+            const textWords = fullText.split(' ');
+            let wordIndex = 0;
+
+            utterance.onboundary = (e) => {
+                if (e.name === 'word' && wordIndex < wordEls.length) {
+                    // Remove previous highlights
+                    wordEls.forEach(w => w.classList.remove('highlight'));
+                    wordEls[wordIndex].classList.add('highlight');
+                    wordIndex++;
+                }
+            };
+
+            utterance.onend = () => {
+                wordEls.forEach(w => w.classList.remove('highlight'));
+            };
+
+            synth.speak(utterance);
+        }
+
+        // Debounce for page turns
+        let lastTurn = 0;
+        function tapAccepted() {
+            const now = Date.now();
+            if (now - lastTurn < 250) return false;
+            lastTurn = now;
+            return true;
+        }
+
+        function nextPage() {
+            if (!tapAccepted()) return;
+            if (currentPage < story.length - 1) {
+                currentPage++;
+                loadPage();
+            }
+        }
+
+        function prevPage() {
+            if (!tapAccepted()) return;
+            if (currentPage > 0) {
+                currentPage--;
+                loadPage();
+            }
+        }
+
+        // Confetti celebration
+        function launchConfetti() {
+            const colors = ['#FF6B6B', '#FFD93D', '#6BCB77', '#4D96FF', '#FF6FCF', '#A66CFF'];
+            for (let i = 0; i < 40; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + 'vw';
+                piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.animationDuration = (2 + Math.random() * 3) + 's';
+                piece.style.animationDelay = (Math.random() * 1.5) + 's';
+                piece.style.width = (8 + Math.random() * 10) + 'px';
+                piece.style.height = (8 + Math.random() * 10) + 'px';
+                piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                document.body.appendChild(piece);
+
+                // Clean up after animation
+                piece.addEventListener('animationend', () => piece.remove());
+            }
+        }
+
+        // Initialize
+        loadPage();
+    </script>
+</body>
+</html>
