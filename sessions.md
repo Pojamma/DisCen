@@ -75,3 +75,15 @@ Renamed `websites/task_master/` directory to `websites/taskmaster/` and updated 
 ### Deployment Notes
 - Server nginx config (`/etc/nginx/conf.d/discen.conf`) needs to be updated to match the new `discen.conf`
 - Run `sudo restorecon -Rv /home/opc/DisCen/websites/taskmaster` for SELinux after deploy
+
+## Session 2026-08-15 PDT
+
+### Summary
+Added Kitten Story interactive storybook game for young children (age 4) and added it to the main menu.
+
+### Changes
+- Added `websites/games/kitten_story/` directory containing `kitten_story.html` and 8 kitten illustration images
+- Added "Kitten Story" entry to the entertainment section in `websites/main/public/index.html`
+
+### Commits
+- `fd08e23` — Add Kitten Story game to menu and games directory
