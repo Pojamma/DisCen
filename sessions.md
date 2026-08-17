@@ -101,3 +101,17 @@ Added Puppy Sisters Sports Storybook — a 10-page interactive reading storybook
 
 ### Commits
 - `06a19e2` — Add Puppy Sisters Sports Storybook to menu and games directory
+- `0d916d4` — Add storybook template and session summary
+- `1cb98a7` — Add Cooking Kittens storybook to menu and games directory
+
+## Session 2026-08-15 22:45 PDT
+
+### Summary
+Added Cooking Kittens storybook — a 10-page interactive reading storybook about two kittens (Whiskers and Mittens) who bake a cake together. Used the storybook template workflow for the first time.
+
+### Changes
+- Created `websites/games/cooking_kittens/` directory with `cooking_kittens.html` and 10 claymation-style kitten illustration PNGs
+- Added "Cooking Kittens" entry to the entertainment section in `websites/main/public/index.html`
+
+### Commits
+- `1cb98a7` — Add Cooking Kittens storybook to menu and games directory
