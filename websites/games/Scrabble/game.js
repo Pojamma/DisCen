@@ -1294,8 +1294,11 @@ function recallTiles() {
 
 function shuffleRack() {
   const player = state.players[state.currentPlayer];
+  // Recall placed tiles so rack indices don't go stale after shuffle
+  placedTiles = [];
+  selectedRackIndex = null;
   shuffle(player.rack);
-  renderRack();
+  renderAll();
 }
 
 function toggleExchangeMode() {
