@@ -370,6 +370,7 @@ class TaskManager {
         let statusChar = '[ ]';
         if (task.status === 'completed') statusChar = '[x]';
         else if (task.status === 'in-progress') statusChar = '[_]';
+        else if (task.status === 'on-hold') statusChar = '[-]';
 
         let markdown = `- ${statusChar} ${task.title}\n`;
 
@@ -751,15 +752,16 @@ class TaskManager {
         if (searchTerm) {
             filtered = filtered.filter(task =>
                 task.title.toLowerCase().includes(searchTerm) ||
-                task.notes.toLowerCase().includes(searchTerm) ||
+                (task.notes || '').toLowerCase().includes(searchTerm) ||
                 task.source.toLowerCase().includes(searchTerm)
             );
         }
 
-        // Apply status filter
-        const statusFilter = document.getElementById('statusFilter').value;
-        if (statusFilter) {
-            filtered = filtered.filter(task => task.status === statusFilter);
+        // Apply status filter (multi-select chips)
+        const activeChips = document.querySelectorAll('.status-chip.active');
+        if (activeChips.length > 0) {
+            const activeStatuses = Array.from(activeChips).map(chip => chip.dataset.status);
+            filtered = filtered.filter(task => activeStatuses.includes(task.status));
         }
 
         // Apply category filter
@@ -1141,6 +1143,11 @@ function copyModalNotes() {
 
 function createNewTask() {
     taskManager.createNewTask();
+}
+
+function toggleStatusFilter(chip) {
+    chip.classList.toggle('active');
+    taskManager.renderTasks();
 }
 
 function toggleFileMenu() {

@@ -150,6 +150,61 @@
             background: white;
         }
 
+        .status-filter-chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .status-filter-chips .chip-label {
+            font-size: 13px;
+            color: #6c757d;
+            font-weight: 500;
+            margin-right: 2px;
+        }
+
+        .status-chip {
+            padding: 6px 14px;
+            border: 2px solid #e9ecef;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            color: #555;
+        }
+
+        .status-chip:hover {
+            border-color: #adb5bd;
+            background: #f8f9fa;
+        }
+
+        .status-chip.active[data-status="pending"] {
+            background: #fff3cd;
+            border-color: #856404;
+            color: #856404;
+        }
+
+        .status-chip.active[data-status="in-progress"] {
+            background: #cce5ff;
+            border-color: #004085;
+            color: #004085;
+        }
+
+        .status-chip.active[data-status="on-hold"] {
+            background: #e2e3e5;
+            border-color: #383d41;
+            color: #383d41;
+        }
+
+        .status-chip.active[data-status="completed"] {
+            background: #d4edda;
+            border-color: #155724;
+            color: #155724;
+        }
+
         .view-toggle {
             display: flex;
             background: #e9ecef;
@@ -277,6 +332,11 @@
             color: #004085;
         }
 
+        .status-on-hold {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
         .task-meta {
             display: flex;
             gap: 15px;
@@ -396,6 +456,12 @@
 
         .table tr:hover {
             background: #f8f9fa;
+        }
+
+        .table th:first-child,
+        .table td:first-child {
+            min-width: 400px;
+            width: 40%;
         }
 
         .table .status-cell {
@@ -868,14 +934,15 @@
                 <span class="search-icon">🔍</span>
             </div>
 
-            <div class="filters">
-                <select id="statusFilter" class="filter-select" onchange="filterTasks()">
-                    <option value="">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="completed">Completed</option>
-                    <option value="in-progress">In Progress</option>
-                </select>
+            <div class="status-filter-chips">
+                <span class="chip-label">Status:</span>
+                <button class="status-chip" data-status="pending" onclick="toggleStatusFilter(this)">Pending</button>
+                <button class="status-chip" data-status="in-progress" onclick="toggleStatusFilter(this)">In Progress</button>
+                <button class="status-chip" data-status="on-hold" onclick="toggleStatusFilter(this)">On Hold</button>
+                <button class="status-chip" data-status="completed" onclick="toggleStatusFilter(this)">Completed</button>
+            </div>
 
+            <div class="filters">
                 <select id="categoryFilter" class="filter-select" onchange="filterTasks()">
                     <option value="">All Categories</option>
                     <option value="bug">Bug</option>
@@ -965,6 +1032,7 @@
                     <select id="taskStatus">
                         <option value="pending">Pending</option>
                         <option value="in-progress">In Progress</option>
+                        <option value="on-hold">On Hold</option>
                         <option value="completed">Completed</option>
                     </select>
                 </div>
@@ -1085,6 +1153,6 @@
     <!-- Import Master File Input -->
     <input type="file" id="masterFileInput" accept=".json" style="display: none;">
 
-    <script src="task_manager.js"></script>
+    <script src="task_manager.js?v=2"></script>
 </body>
 </html>
