@@ -115,3 +115,17 @@ Added Cooking Kittens storybook — a 10-page interactive reading storybook abou
 
 ### Commits
 - `1cb98a7` — Add Cooking Kittens storybook to menu and games directory
+
+## Session 2026-09-18 17:59 PDT
+
+### Summary
+Added hideable project tabs with tray and context menu to Task Master. The X button on project tabs now hides the tab instead of deleting it. Hidden tabs appear in a "📂 N hidden" tray button at the end of the tab row, with a dropdown to restore them. Delete and Rename are now accessed via long-press (touch) or right-click context menu instead of dblclick/X. Also updated the `~/TaskMasterApp/build-apk.sh` script to automatically copy latest source files from DisCen, apply APK-specific patches via sed, and output the APK to the shared Downloads directory.
+
+### Changes
+- `websites/taskmaster/task_manager.js` — Added `hiddenProjects` array to data model with localStorage persistence; `hideProjectTab()`/`showProjectTab()` methods; hidden tabs tray dropdown (`toggleHiddenTabsMenu()`); long-press and right-click context menu (`showTabContextMenu()`) with Rename/Delete options; updated `deleteProjectTab()`/`renameProjectTab()` to clean up hidden state; Escape key closes menus
+- `websites/taskmaster/task_manager.html` — Added CSS for `.hidden-tabs-btn`, `.hidden-tabs-menu`, `.hidden-tab-item`, `.tab-context-menu`, `.tab-context-item`; bumped script cache version to v=3
+- `~/TaskMasterApp/build-apk.sh` — Rewrote to copy fresh source from DisCen, patch index.html with APK-specific meta tags/safe-area padding/Capacitor back button handler via sed, output APK to `/storage/emulated/0/Download/TaskMaster.apk`
+
+### Commits
+- `7e7af12` — Add multi-select status filter chips and On Hold status to Task Master
+- `309b92f` — Add hideable project tabs with tray and context menu to Task Master
