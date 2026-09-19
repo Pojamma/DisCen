@@ -8,6 +8,7 @@ class TaskManager {
         this.editingTaskId = null;
         this.projects = [];
         this.activeProject = null;
+        this.hiddenProjects = [];
         this.init();
     }
 
@@ -28,7 +29,8 @@ class TaskManager {
                 totalTasks: this.tasks.length,
                 completedTasks: this.tasks.filter(t => t.status === 'completed').length,
                 sources: [...new Set(this.tasks.map(t => t.source))],
-                projects: this.projects
+                projects: this.projects,
+                hiddenProjects: this.hiddenProjects
             }
         };
     }
@@ -466,6 +468,9 @@ class TaskManager {
                 if (data.metadata && data.metadata.projects) {
                     this.projects = data.metadata.projects;
                 }
+                if (data.metadata && data.metadata.hiddenProjects) {
+                    this.hiddenProjects = data.metadata.hiddenProjects;
+                }
             } catch (error) {
                 console.error('Error loading from localStorage:', error);
             }
@@ -610,7 +615,11 @@ class TaskManager {
         const projectsFromTasks = [...new Set(this.tasks.map(t => t.project).filter(p => p))];
         const allProjects = [...new Set([...this.projects, ...projectsFromTasks])].sort();
 
-        allProjects.forEach(project => {
+        // Split into visible and hidden
+        const visibleProjects = allProjects.filter(p => !this.hiddenProjects.includes(p));
+        const hiddenProjects = allProjects.filter(p => this.hiddenProjects.includes(p));
+
+        visibleProjects.forEach(project => {
             const count = this.tasks.filter(t => t.project === project).length;
             const isActive = this.activeProject === project;
 
@@ -630,12 +639,38 @@ class TaskManager {
             closeBtn.innerHTML = '&times;';
             closeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.deleteProjectTab(project);
+                this.hideProjectTab(project);
             });
             tab.appendChild(closeBtn);
 
             tab.addEventListener('click', () => this.setActiveProject(project));
-            tab.addEventListener('dblclick', () => this.renameProjectTab(project));
+
+            // Long-press and right-click context menu
+            let pressTimer = null;
+            let longPressed = false;
+            tab.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.showTabContextMenu(project, e.clientX, e.clientY);
+            });
+            tab.addEventListener('touchstart', (e) => {
+                longPressed = false;
+                pressTimer = setTimeout(() => {
+                    longPressed = true;
+                    const touch = e.touches[0];
+                    this.showTabContextMenu(project, touch.clientX, touch.clientY);
+                }, 500);
+            }, { passive: true });
+            tab.addEventListener('touchend', (e) => {
+                clearTimeout(pressTimer);
+                if (longPressed) {
+                    e.preventDefault();
+                }
+            });
+            tab.addEventListener('touchmove', () => {
+                clearTimeout(pressTimer);
+            }, { passive: true });
+
             container.appendChild(tab);
         });
 
@@ -646,6 +681,156 @@ class TaskManager {
         addBtn.title = 'Add new project/client';
         addBtn.addEventListener('click', () => this.addProjectTab());
         container.appendChild(addBtn);
+
+        // Hidden tabs tray button
+        if (hiddenProjects.length > 0) {
+            const trayBtn = document.createElement('button');
+            trayBtn.className = 'hidden-tabs-btn';
+            trayBtn.innerHTML = '📂 ' + hiddenProjects.length + ' hidden';
+            trayBtn.title = 'Show hidden project tabs';
+            trayBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleHiddenTabsMenu(trayBtn);
+            });
+            container.appendChild(trayBtn);
+        }
+    }
+
+    hideProjectTab(project) {
+        if (!this.hiddenProjects.includes(project)) {
+            this.hiddenProjects.push(project);
+        }
+        if (this.activeProject === project) {
+            this.activeProject = null;
+        }
+        this.saveToLocalStorage();
+        this.renderTasks();
+        this.updateStats();
+        this.showNotification('Tab "' + project + '" hidden.', 'info');
+    }
+
+    showProjectTab(project) {
+        this.hiddenProjects = this.hiddenProjects.filter(p => p !== project);
+        this.saveToLocalStorage();
+        this.renderTasks();
+        this.updateStats();
+        this.showNotification('Tab "' + project + '" restored.', 'success');
+    }
+
+    toggleHiddenTabsMenu(anchorBtn) {
+        // Close any existing hidden tabs menu
+        const existing = document.querySelector('.hidden-tabs-menu');
+        if (existing) {
+            existing.remove();
+            return;
+        }
+
+        const menu = document.createElement('div');
+        menu.className = 'hidden-tabs-menu';
+
+        const hiddenList = this.hiddenProjects.filter(p => {
+            const projectsFromTasks = [...new Set(this.tasks.map(t => t.project).filter(p => p))];
+            const allProjects = [...new Set([...this.projects, ...projectsFromTasks])];
+            return allProjects.includes(p);
+        });
+
+        hiddenList.forEach(project => {
+            const count = this.tasks.filter(t => t.project === project).length;
+            const item = document.createElement('div');
+            item.className = 'hidden-tab-item';
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'hidden-tab-name';
+            nameSpan.textContent = project;
+            item.appendChild(nameSpan);
+
+            const countBadge = document.createElement('span');
+            countBadge.className = 'hidden-tab-count';
+            countBadge.textContent = count;
+            item.appendChild(countBadge);
+
+            const showBtn = document.createElement('button');
+            showBtn.className = 'btn btn-primary btn-small';
+            showBtn.textContent = 'Show';
+            showBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.remove();
+                this.showProjectTab(project);
+            });
+            item.appendChild(showBtn);
+
+            menu.appendChild(item);
+        });
+
+        // Position the menu
+        const rect = anchorBtn.getBoundingClientRect();
+        menu.style.top = (rect.bottom + 4) + 'px';
+        menu.style.left = rect.left + 'px';
+
+        document.body.appendChild(menu);
+
+        // Close when clicking outside
+        const closeHandler = (e) => {
+            if (!menu.contains(e.target) && e.target !== anchorBtn) {
+                menu.remove();
+                document.removeEventListener('click', closeHandler);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', closeHandler), 0);
+    }
+
+    showTabContextMenu(project, x, y) {
+        // Close any existing context menu
+        const existing = document.querySelector('.tab-context-menu');
+        if (existing) existing.remove();
+
+        const menu = document.createElement('div');
+        menu.className = 'tab-context-menu';
+
+        const renameItem = document.createElement('button');
+        renameItem.className = 'tab-context-item';
+        renameItem.textContent = '✏️ Rename';
+        renameItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menu.remove();
+            this.renameProjectTab(project);
+        });
+        menu.appendChild(renameItem);
+
+        const deleteItem = document.createElement('button');
+        deleteItem.className = 'tab-context-item danger';
+        deleteItem.textContent = '🗑️ Delete';
+        deleteItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menu.remove();
+            this.deleteProjectTab(project);
+        });
+        menu.appendChild(deleteItem);
+
+        // Position the menu
+        menu.style.top = y + 'px';
+        menu.style.left = x + 'px';
+        document.body.appendChild(menu);
+
+        // Adjust if menu goes off-screen
+        requestAnimationFrame(() => {
+            const menuRect = menu.getBoundingClientRect();
+            if (menuRect.right > window.innerWidth) {
+                menu.style.left = (window.innerWidth - menuRect.width - 8) + 'px';
+            }
+            if (menuRect.bottom > window.innerHeight) {
+                menu.style.top = (window.innerHeight - menuRect.height - 8) + 'px';
+            }
+        });
+
+        // Close when clicking outside
+        const closeHandler = (e) => {
+            if (!menu.contains(e.target)) {
+                menu.remove();
+                document.removeEventListener('click', closeHandler);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', closeHandler), 0);
     }
 
     setActiveProject(project) {
@@ -673,6 +858,7 @@ class TaskManager {
         if (!confirm('Delete project "' + project + '"? Tasks will be moved to (No Project).')) return;
 
         this.projects = this.projects.filter(p => p !== project);
+        this.hiddenProjects = this.hiddenProjects.filter(p => p !== project);
 
         this.tasks.forEach(task => {
             if (task.project === project) {
@@ -710,6 +896,12 @@ class TaskManager {
 
             if (this.activeProject === oldName) {
                 this.activeProject = trimmed;
+            }
+
+            // Update hiddenProjects if the renamed project was hidden
+            const hiddenIdx = this.hiddenProjects.indexOf(oldName);
+            if (hiddenIdx !== -1) {
+                this.hiddenProjects[hiddenIdx] = trimmed;
             }
 
             this.saveToLocalStorage();
@@ -940,6 +1132,11 @@ class TaskManager {
                 // Close any open modals
                 this.closeModal();
                 document.getElementById('helpModal').style.display = 'none';
+                // Close context menus and hidden tabs menu
+                const ctxMenu = document.querySelector('.tab-context-menu');
+                if (ctxMenu) ctxMenu.remove();
+                const hiddenMenu = document.querySelector('.hidden-tabs-menu');
+                if (hiddenMenu) hiddenMenu.remove();
             }
         });
     }

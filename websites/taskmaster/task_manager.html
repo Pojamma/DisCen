@@ -733,6 +733,108 @@
             color: #28a745;
         }
 
+        /* Hidden Tabs Tray Button */
+        .hidden-tabs-btn {
+            padding: 10px 16px;
+            border: 2px solid #6c757d;
+            border-bottom: none;
+            border-radius: 10px 10px 0 0;
+            background: #f0f0f0;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            margin-left: 4px;
+            position: relative;
+            bottom: -3px;
+        }
+
+        .hidden-tabs-btn:hover {
+            background: #e2e6ea;
+            border-color: #007bff;
+            color: #007bff;
+        }
+
+        /* Hidden Tabs Dropdown Menu */
+        .hidden-tabs-menu {
+            position: fixed;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            min-width: 250px;
+            z-index: 1000;
+            padding: 8px 0;
+        }
+
+        .hidden-tab-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            transition: background 0.15s;
+        }
+
+        .hidden-tab-item:hover {
+            background: #f0f4ff;
+        }
+
+        .hidden-tab-name {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .hidden-tab-count {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            color: #555;
+        }
+
+        /* Tab Context Menu */
+        .tab-context-menu {
+            position: fixed;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            min-width: 160px;
+            z-index: 1001;
+            padding: 6px 0;
+        }
+
+        .tab-context-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 10px 16px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            text-align: left;
+            transition: background 0.15s;
+        }
+
+        .tab-context-item:hover {
+            background: #f0f4ff;
+        }
+
+        .tab-context-item.danger {
+            color: #dc3545;
+        }
+
+        .tab-context-item.danger:hover {
+            background: #fff0f0;
+        }
+
         /* File Menu Dropdown */
         .dropdown {
             position: relative;
@@ -1153,6 +1255,6 @@
     <!-- Import Master File Input -->
     <input type="file" id="masterFileInput" accept=".json" style="display: none;">
 
-    <script src="task_manager.js?v=2"></script>
+    <script src="task_manager.js?v=3"></script>
 </body>
 </html>
