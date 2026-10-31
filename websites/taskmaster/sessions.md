@@ -36,3 +36,16 @@ Added priority field, UI improvements, copy-notes functionality, and unique expo
 - `759f675` Show exported filename and download location in notification
 - `6d97eab` Add copy-to-clipboard button for task notes
 - `53f5412` Make export filenames unique with timestamp and active tab name
+
+## Session 2026-10-29 20:45 PDT
+
+### Summary
+Added custom app icon for the Android (Capacitor) build of Task Master.
+
+### Changes Made
+- **Custom Android icon**: Moved `icon.jpg` (2048x2048) from `DisCen/websites/taskmaster/` to `~/TaskMasterApp/` and generated all required Android icon PNGs using Pillow:
+  - `ic_launcher.png` — legacy square icons (mdpi 48px through xxxhdpi 192px)
+  - `ic_launcher_round.png` — circular icons for round launchers (same density range)
+  - `ic_launcher_foreground.png` — adaptive icon foreground with safe zone padding (mdpi 108px through xxxhdpi 432px)
+- **Removed default Capacitor icons**: Deleted the old vector XML drawables (`drawable-v24/ic_launcher_foreground.xml` and `drawable/ic_launcher_background.xml`) that would have overridden the new PNGs
+- **Updated adaptive icon config**: Added monochrome layer to `mipmap-anydpi-v26/ic_launcher.xml` for Android 13+ themed icon support
