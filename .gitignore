@@ -224,3 +224,6 @@ site/
 
 # Secure documentation directory
 secure-docs/
+
+# Math Adventure user data (contains password hashes)
+data/

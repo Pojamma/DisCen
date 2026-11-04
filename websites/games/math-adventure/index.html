@@ -1,0 +1,2036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Adventure</title>
+    <style>
+        :root {
+            --primary: #FF9E80;
+            --primary-dark: #E88A6C;
+            --secondary: #81D4FA;
+            --secondary-dark: #5BB8E0;
+            --accent: #FFEB3B;
+            --accent-dark: #FDD835;
+            --success: #9CCC65;
+            --error: #EF5350;
+            --neutral: #F5F5F5;
+            --dark: #424242;
+            --purple: #CE93D8;
+            --bg: #E0F7FA;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', 'Varela Round', sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        /* ── Screens ─────────────────────────────────────────── */
+        .screen { display: none; width: 100%; max-width: 800px; }
+        .screen.active { display: flex; flex-direction: column; gap: 15px; }
+
+        /* ── Header Bar ──────────────────────────────────────── */
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            border-radius: 15px;
+            padding: 10px 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .header-left, .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .coin-display {
+            background: linear-gradient(135deg, #FFD700, #FFA000);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            position: relative;
+        }
+        .streak-display {
+            background: linear-gradient(135deg, #FF6B35, #FF4444);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .streak-display.inactive { background: #ccc; }
+        .header-btn {
+            background: white;
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            padding: 6px 12px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform 0.1s;
+        }
+        .header-btn:hover { transform: scale(1.05); background: #FFF3E0; }
+
+        /* ── Splash Screen ───────────────────────────────────── */
+        .splash-box {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .splash-box h1 { font-size: 2.5rem; color: var(--primary-dark); margin-bottom: 5px; }
+        .splash-box .subtitle { font-size: 1.2rem; color: #888; margin-bottom: 20px; }
+        .splash-box input[type="password"], .splash-box input[type="text"] {
+            width: 80%; max-width: 300px;
+            padding: 12px;
+            font-size: 1.1rem;
+            border: 3px solid var(--secondary);
+            border-radius: 12px;
+            text-align: center;
+            font-family: inherit;
+            margin: 5px 0;
+        }
+        .splash-box input:focus { outline: none; border-color: var(--primary); }
+
+        /* ── User Select Screen ──────────────────────────────── */
+        .user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            padding: 10px;
+        }
+        .user-card {
+            background: white;
+            border: 3px solid var(--secondary);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .user-card:hover { transform: scale(1.05); border-color: var(--primary); }
+        .user-card .avatar { font-size: 3rem; }
+        .user-card .username { font-size: 1rem; font-weight: bold; color: var(--dark); margin-top: 5px; }
+
+        /* ── Game Container ──────────────────────────────────── */
+        .game-box {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .title-section {
+            text-align: center;
+            padding: 10px;
+            background-color: var(--primary);
+            border-radius: 15px;
+        }
+        .title-section h1 { font-size: 2.2rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .formula-section {
+            text-align: center;
+            font-size: 2rem;
+            padding: 15px;
+            background-color: var(--secondary);
+            border-radius: 15px;
+            font-weight: bold;
+            color: var(--dark);
+        }
+        .vertical-representation {
+            display: flex;
+            flex-direction: column;
+            background-color: var(--neutral);
+            padding: 20px;
+            border-radius: 15px;
+            align-items: center;
+            gap: 10px;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+        .step-number { min-width: 80px; text-align: right; font-weight: bold; }
+        .step-icons { display: flex; flex-wrap: wrap; gap: 5px; font-size: 1.8rem; }
+        .divider { width: 80%; border-bottom: 3px solid var(--dark); margin: 10px 0; }
+        .answer-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            padding: 15px;
+            background-color: var(--accent);
+            border-radius: 15px;
+        }
+        .answer-option {
+            background-color: white;
+            border: 4px solid var(--primary);
+            border-radius: 15px;
+            padding: 10px 20px;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            min-width: 60px;
+            text-align: center;
+            font-family: inherit;
+        }
+        .answer-option:hover { transform: scale(1.05); background-color: #FFF9C4; }
+        .answer-option.correct { animation: correctAnim 0.5s; background-color: var(--success) !important; color: white; }
+        .answer-option.incorrect { animation: incorrectAnim 0.5s; background-color: var(--error) !important; color: white; }
+        .message-section {
+            min-height: 50px;
+            text-align: center;
+            font-size: 1.4rem;
+            padding: 10px;
+            background-color: var(--neutral);
+            border-radius: 15px;
+            color: var(--dark);
+            font-weight: bold;
+        }
+        .controls-section {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 15px;
+            background-color: var(--neutral);
+            border-radius: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .controls-left { display: flex; flex-direction: column; gap: 8px; }
+        .controls-right { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .operations-container { display: flex; flex-wrap: wrap; gap: 8px; }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background-color: white;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        .operation-checkbox { width: 18px; height: 18px; cursor: pointer; }
+        .age-selector {
+            padding: 8px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 1rem;
+            border: 2px solid var(--primary);
+        }
+
+        /* ── Progress Bar ────────────────────────────────────── */
+        .progress-bar-container {
+            background: #ddd;
+            border-radius: 10px;
+            height: 12px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), #66BB6A);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+        .progress-label { font-size: 0.8rem; color: #888; text-align: center; }
+
+        /* ── Buttons ─────────────────────────────────────────── */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.1s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .btn:hover { transform: scale(1.05); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-secondary { background-color: var(--secondary); color: var(--dark); }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-danger { background-color: var(--error); color: white; }
+        .btn-small { padding: 6px 12px; font-size: 0.9rem; }
+        .btn-guest { background-color: var(--purple); color: white; }
+
+        /* ── Modal ────────────────────────────────────────────── */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .modal-content h2 { margin-bottom: 15px; color: var(--dark); }
+        .close-btn {
+            position: absolute;
+            top: 10px; right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--dark);
+            line-height: 1;
+        }
+        .close-btn:hover { color: black; }
+
+        /* ── Store ────────────────────────────────────────────── */
+        .prize-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: border-color 0.2s;
+        }
+        .prize-card:hover { border-color: var(--accent-dark); }
+        .prize-emoji { font-size: 2.5rem; }
+        .prize-info { flex: 1; }
+        .prize-info .name { font-weight: bold; font-size: 1.1rem; }
+        .prize-info .desc { font-size: 0.85rem; color: #888; }
+        .prize-cost { font-weight: bold; color: #FFA000; }
+        .prize-status { font-size: 0.85rem; padding: 4px 8px; border-radius: 8px; }
+        .prize-status.pending { background: #FFF9C4; color: #F57F17; }
+        .prize-status.fulfilled { background: #C8E6C9; color: #2E7D32; }
+
+        /* ── Badges ───────────────────────────────────────────── */
+        .badge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+        .badge-card {
+            text-align: center;
+            padding: 10px;
+            border-radius: 12px;
+            border: 2px solid #eee;
+        }
+        .badge-card.earned { border-color: var(--accent-dark); background: #FFFDE7; }
+        .badge-card.locked { opacity: 0.4; }
+        .badge-card .badge-icon { font-size: 2rem; }
+        .badge-card .badge-name { font-size: 0.75rem; font-weight: bold; margin-top: 4px; }
+
+        /* ── Admin Panel ──────────────────────────────────────── */
+        .admin-tabs {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .admin-tab {
+            padding: 8px 14px;
+            background: #eee;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+        .admin-tab.active { background: var(--primary); color: white; }
+        .admin-panel { display: none; }
+        .admin-panel.active { display: block; }
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .admin-table th, .admin-table td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; }
+        .admin-table th { background: var(--neutral); font-weight: bold; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 4px; font-size: 0.9rem; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 8px; border: 2px solid #ddd;
+            border-radius: 8px; font-family: inherit; font-size: 1rem;
+        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); }
+        .form-row { display: flex; gap: 10px; }
+        .form-row .form-group { flex: 1; }
+        .stat-bar-container { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+        .stat-bar { height: 16px; background: var(--secondary); border-radius: 8px; min-width: 4px; }
+        .stat-label { font-size: 0.8rem; min-width: 80px; }
+
+        /* ── Profile Calendar ─────────────────────────────────── */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 3px;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+        .calendar-grid .day-header { font-weight: bold; color: #888; }
+        .calendar-grid .day {
+            padding: 4px;
+            border-radius: 6px;
+            background: #f5f5f5;
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .calendar-grid .day.played { background: #C8E6C9; }
+        .calendar-grid .day.today { border: 2px solid var(--primary); }
+        .calendar-grid .day.empty { background: transparent; }
+
+        /* ── Floating Coin Animation ──────────────────────────── */
+        .floating-coins {
+            position: fixed;
+            pointer-events: none;
+            z-index: 200;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #FFA000;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            animation: floatUp 1.2s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-80px); }
+        }
+
+        /* ── Confetti ─────────────────────────────────────────── */
+        .confetti-piece {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            z-index: 200;
+            pointer-events: none;
+            animation: confettiFall 2s ease-out forwards;
+        }
+        @keyframes confettiFall {
+            0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+            100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+        }
+
+        /* ── Bonus Round Sparkle ──────────────────────────────── */
+        .bonus-active .game-box { border: 3px solid var(--accent); box-shadow: 0 0 20px rgba(255,235,59,0.5); }
+
+        /* ── Animations ──────────────────────────────────────── */
+        @keyframes correctAnim {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        @keyframes incorrectAnim {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* ── Responsive ──────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .title-section h1 { font-size: 1.8rem; }
+            .formula-section { font-size: 1.5rem; }
+            .step { font-size: 1.2rem; }
+            .step-icons { font-size: 1.4rem; }
+            .answer-option { font-size: 1.4rem; padding: 8px 16px; }
+            .controls-section { flex-direction: column; align-items: stretch; }
+            .controls-right { justify-content: center; }
+        }
+        @media (max-width: 480px) {
+            body { padding: 5px; }
+            .splash-box h1 { font-size: 2rem; }
+            .step-number { min-width: 50px; font-size: 1.1rem; }
+            .answer-option { font-size: 1.2rem; padding: 8px 14px; min-width: 50px; }
+            .header-btn { padding: 4px 8px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- SCREEN: SPLASH                                                  -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="screen-splash" class="screen active">
+    <div class="splash-box">
+        <h1>Math Adventure</h1>
+        <p class="subtitle">Learn math, earn coins, win prizes!</p>
+        <div id="splash-content">
+            <!-- Dynamically filled: setup form or login form -->
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- SCREEN: USER SELECT                                             -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="screen-user-select" class="screen">
+    <div class="splash-box">
+        <h1>Who's Playing?</h1>
+        <div id="user-grid" class="user-grid"></div>
+        <div style="margin-top:15px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="showAdminLogin()">Admin</button>
+            <button class="btn btn-secondary" onclick="showScreen('splash')">Back</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- SCREEN: GAME                                                    -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="screen-game" class="screen">
+    <!-- Header Bar -->
+    <div class="header-bar">
+        <div class="header-left">
+            <div class="coin-display" id="coin-display">&#x1FA99; <span id="coin-count">0</span></div>
+            <div class="streak-display inactive" id="streak-display">&#x1F525; 0</div>
+        </div>
+        <div class="header-right">
+            <button class="header-btn" onclick="openStore()">Store</button>
+            <button class="header-btn" onclick="openBadges()">Badges</button>
+            <button class="header-btn" onclick="openProfile()">Profile</button>
+            <button class="header-btn" onclick="openHelp()">?</button>
+            <button class="header-btn" onclick="logout()">Exit</button>
+        </div>
+    </div>
+
+    <!-- Progress toward next prize -->
+    <div style="background:white;border-radius:10px;padding:8px 15px;">
+        <div class="progress-label" id="progress-label">Earn coins to buy prizes!</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progress-bar"></div>
+        </div>
+    </div>
+
+    <!-- Game Box -->
+    <div class="game-box" id="game-box">
+        <div class="title-section">
+            <h1 id="game-title">Fun with Numbers!</h1>
+        </div>
+        <div class="formula-section" id="formula">2 + ? = 5</div>
+        <div class="vertical-representation" id="visual-representation">
+            <div class="step">
+                <div class="step-number" id="step1-number">2</div>
+                <div class="step-icons" id="first-number-icons"></div>
+            </div>
+            <div class="step">
+                <div class="step-number" id="step2-number">+ ?</div>
+                <div class="step-icons" id="second-number-icons"></div>
+            </div>
+            <div class="divider"></div>
+            <div class="step">
+                <div class="step-number" id="step3-number">5</div>
+                <div class="step-icons" id="result-icons"></div>
+            </div>
+        </div>
+        <div class="answer-section" id="answer-options"></div>
+        <div class="message-section" id="message">Choose the correct answer!</div>
+        <div class="controls-section">
+            <div class="controls-left">
+                <div class="operations-container">
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="op-addition" class="operation-checkbox" checked>
+                        <label for="op-addition">Addition (+)</label>
+                    </div>
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="op-subtraction" class="operation-checkbox" checked>
+                        <label for="op-subtraction">Subtraction (-)</label>
+                    </div>
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="op-multiplication" class="operation-checkbox">
+                        <label for="op-multiplication">Multiply (x)</label>
+                    </div>
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="op-division" class="operation-checkbox">
+                        <label for="op-division">Divide (/)</label>
+                    </div>
+                </div>
+                <select class="age-selector" id="age-selector">
+                    <option value="3-5">Ages 3-5</option>
+                    <option value="6-8">Ages 6-8</option>
+                    <option value="9+">Ages 9+</option>
+                </select>
+            </div>
+            <div class="controls-right">
+                <button class="btn btn-primary" onclick="generateNewProblem()">New Problem</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: STORE                                                    -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="modal-store" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('modal-store')">&times;</span>
+        <h2>Prize Store &#x1FA99;</h2>
+        <p style="margin-bottom:10px;">Your coins: <strong id="store-coins">0</strong></p>
+        <div id="store-prizes"></div>
+        <hr style="margin:15px 0;">
+        <h3>My Prizes</h3>
+        <div id="my-prizes"></div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: BADGES                                                   -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="modal-badges" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('modal-badges')">&times;</span>
+        <h2>Badges</h2>
+        <div id="badge-grid" class="badge-grid"></div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: PROFILE                                                  -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="modal-profile" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('modal-profile')">&times;</span>
+        <h2 id="profile-title">Profile</h2>
+        <div id="profile-stats"></div>
+        <h3 style="margin:15px 0 10px;">This Month</h3>
+        <div id="profile-calendar"></div>
+        <h3 style="margin:15px 0 10px;">My Prizes</h3>
+        <div id="profile-prizes"></div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: HELP                                                     -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="modal-help" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('modal-help')">&times;</span>
+        <h2>How to Play</h2>
+        <p>Welcome to <strong>Math Adventure</strong>! Solve math problems to earn coins and buy prizes!</p>
+        <h3 style="margin-top:12px;">How It Works:</h3>
+        <ol style="margin:8px 0 8px 20px; line-height:1.8;">
+            <li>Look at the math problem and the picture clues</li>
+            <li>Tap the correct answer</li>
+            <li>Earn <strong>coins</strong> for correct answers!</li>
+            <li>Build a <strong>streak</strong> for bonus coins</li>
+            <li>Spend coins in the <strong>Store</strong> on real prizes</li>
+            <li>Earn <strong>Badges</strong> for special achievements</li>
+        </ol>
+        <h3>Bonus Rounds</h3>
+        <p>Every 10th problem is a bonus round worth double coins!</p>
+        <h3 style="margin-top:8px;">Coins Earned:</h3>
+        <ul style="margin:8px 0 0 20px; line-height:1.8;">
+            <li>Correct answer: <strong>5 coins</strong></li>
+            <li>First try bonus: <strong>+3 coins</strong></li>
+            <li>Streak bonus: <strong>+1 per 5 streak</strong></li>
+            <li>Bonus round: <strong>double coins!</strong></li>
+        </ul>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: ADMIN                                                    -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="modal-admin" class="modal">
+    <div class="modal-content" style="max-width:700px;">
+        <span class="close-btn" onclick="closeModal('modal-admin')">&times;</span>
+        <h2>Admin Panel</h2>
+        <div class="admin-tabs">
+            <button class="admin-tab active" onclick="switchAdminTab('users')">Users</button>
+            <button class="admin-tab" onclick="switchAdminTab('prizes')">Prizes</button>
+            <button class="admin-tab" onclick="switchAdminTab('fulfillment')">Fulfillment</button>
+            <button class="admin-tab" onclick="switchAdminTab('stats')">Stats</button>
+            <button class="admin-tab" onclick="switchAdminTab('settings')">Settings</button>
+        </div>
+        <div id="admin-users" class="admin-panel active"></div>
+        <div id="admin-prizes" class="admin-panel"></div>
+        <div id="admin-fulfillment" class="admin-panel"></div>
+        <div id="admin-stats" class="admin-panel"></div>
+        <div id="admin-settings" class="admin-panel"></div>
+    </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// API CLIENT
+// ══════════════════════════════════════════════════════════════════
+let authToken = null;
+
+async function api(method, path, body) {
+    const opts = {
+        method,
+        headers: { 'Content-Type': 'application/json' }
+    };
+    if (authToken) opts.headers['Authorization'] = 'Bearer ' + authToken;
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch('/api/math-adventure' + path, opts);
+    const data = await res.json();
+    if (!res.ok) throw { status: res.status, ...data };
+    return data;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SOUND ENGINE
+// ══════════════════════════════════════════════════════════════════
+let audioCtx = null;
+let soundEnabled = true;
+
+function ensureAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playTone(freq, duration, type, volume) {
+    if (!soundEnabled) return;
+    try {
+        ensureAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type || 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(volume || 0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    } catch(e) {}
+}
+
+function playCorrectSound() {
+    playTone(523, 0.15, 'sine', 0.3);
+    setTimeout(() => playTone(659, 0.15, 'sine', 0.3), 100);
+    setTimeout(() => playTone(784, 0.3, 'sine', 0.3), 200);
+}
+
+function playWrongSound() {
+    playTone(200, 0.3, 'sawtooth', 0.15);
+}
+
+function playCoinSound() {
+    playTone(880, 0.1, 'sine', 0.2);
+    setTimeout(() => playTone(1100, 0.15, 'sine', 0.2), 80);
+}
+
+function playStreakSound() {
+    playTone(600, 0.1, 'sine', 0.25);
+    setTimeout(() => playTone(800, 0.1, 'sine', 0.25), 80);
+    setTimeout(() => playTone(1000, 0.1, 'sine', 0.25), 160);
+    setTimeout(() => playTone(1200, 0.2, 'sine', 0.25), 240);
+}
+
+function playBadgeSound() {
+    [523, 659, 784, 1047].forEach((f, i) => {
+        setTimeout(() => playTone(f, 0.2, 'sine', 0.3), i * 120);
+    });
+}
+
+function playPurchaseSound() {
+    playTone(440, 0.1, 'triangle', 0.3);
+    setTimeout(() => playTone(554, 0.1, 'triangle', 0.3), 100);
+    setTimeout(() => playTone(659, 0.3, 'triangle', 0.3), 200);
+}
+
+function playBonusRoundSound() {
+    [784, 988, 1175, 1319, 1568].forEach((f, i) => {
+        setTimeout(() => playTone(f, 0.15, 'sine', 0.2), i * 80);
+    });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCREEN MANAGEMENT
+// ══════════════════════════════════════════════════════════════════
+function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById('screen-' + name);
+    if (el) el.classList.add('active');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+
+function openModal(id) {
+    document.getElementById(id).classList.add('active');
+}
+
+// Close modals on backdrop click
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal') && e.target.classList.contains('active')) {
+        e.target.classList.remove('active');
+    }
+});
+
+// ══════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════
+let currentUser = null; // full user object (null = guest)
+let isGuest = false;
+let isAdmin = false;
+
+// Game state
+let currentOperation = 'addition';
+let firstNumber = 0;
+let secondNumber = 0;
+let correctAnswer = 0;
+let currentIcon = '';
+let problemCount = 0;
+let isBonusRound = false;
+let firstTry = true;
+const icons = ['&#x1F34E;','&#x1F34C;','&#x1F352;','&#x1F347;','&#x1F34A;','&#x1F353;','&#x1F349;','&#x1F34D;','&#x1F95D;','&#x1F96D;'];
+const iconChars = ['\u{1F34E}','\u{1F34C}','\u{1F352}','\u{1F347}','\u{1F34A}','\u{1F353}','\u{1F349}','\u{1F34D}','\u{1F95D}','\u{1F96D}'];
+
+// Guest state (in-memory only)
+let guestCoins = 0;
+let guestStats = {
+    totalProblems: 0, correctAnswers: 0, wrongAnswers: 0,
+    currentStreak: 0, bestStreak: 0, totalCoinsEarned: 0,
+    problemsByOperation: { addition: 0, subtraction: 0, multiplication: 0, division: 0 },
+    correctByOperation: { addition: 0, subtraction: 0, multiplication: 0, division: 0 },
+    dailyActivity: {}, bonusRoundsCompleted: 0, dailyChallengesCompleted: 0
+};
+let guestBadges = [];
+
+// Badge definitions
+const BADGES = [
+    { id: 'first-correct', name: 'First Step', icon: '&#x1F476;', desc: 'Get your first correct answer', check: s => s.correctAnswers >= 1 },
+    { id: 'ten-correct', name: 'Ten Star', icon: '&#x2B50;', desc: 'Get 10 correct answers', check: s => s.correctAnswers >= 10 },
+    { id: 'fifty-correct', name: 'Math Whiz', icon: '&#x1F9E0;', desc: '50 correct answers', check: s => s.correctAnswers >= 50 },
+    { id: 'hundred-correct', name: 'Century', icon: '&#x1F4AF;', desc: '100 correct answers', check: s => s.correctAnswers >= 100 },
+    { id: 'streak-5', name: 'On Fire', icon: '&#x1F525;', desc: '5 in a row', check: s => s.bestStreak >= 5 },
+    { id: 'streak-10', name: 'Unstoppable', icon: '&#x26A1;', desc: '10 in a row', check: s => s.bestStreak >= 10 },
+    { id: 'streak-25', name: 'Legendary', icon: '&#x1F451;', desc: '25 in a row', check: s => s.bestStreak >= 25 },
+    { id: 'all-ops', name: 'All-Rounder', icon: '&#x1F3AF;', desc: 'Correct in all 4 operations', check: s => s.correctByOperation.addition > 0 && s.correctByOperation.subtraction > 0 && s.correctByOperation.multiplication > 0 && s.correctByOperation.division > 0 },
+    { id: 'fifty-coins', name: 'Coin Collector', icon: '&#x1FA99;', desc: 'Earn 50 total coins', check: s => s.totalCoinsEarned >= 50 },
+    { id: 'two-hundred-coins', name: 'Rich Kid', icon: '&#x1F4B0;', desc: 'Earn 200 total coins', check: s => s.totalCoinsEarned >= 200 },
+    { id: 'first-purchase', name: 'Shopper', icon: '&#x1F6D2;', desc: 'Buy your first prize', check: (s, u) => u && u.purchasedPrizes && u.purchasedPrizes.length > 0 },
+    { id: 'bonus-3', name: 'Bonus Master', icon: '&#x1F31F;', desc: 'Complete 3 bonus rounds', check: s => s.bonusRoundsCompleted >= 3 }
+];
+
+// ══════════════════════════════════════════════════════════════════
+// AUTH FLOW
+// ══════════════════════════════════════════════════════════════════
+async function initApp() {
+    try {
+        const status = await api('GET', '/auth/status');
+        if (!status.initialized) {
+            showSetupForm();
+        } else {
+            showLoginForm();
+        }
+    } catch (e) {
+        showLoginForm();
+    }
+}
+
+function showSetupForm() {
+    const el = document.getElementById('splash-content');
+    el.innerHTML = `
+        <p style="margin-bottom:15px;color:#666;">First time? Create a parent password to get started.</p>
+        <input type="password" id="setup-pw" placeholder="Create password" autocomplete="new-password"><br>
+        <input type="password" id="setup-pw2" placeholder="Confirm password" autocomplete="new-password"><br>
+        <p id="setup-error" style="color:var(--error);min-height:20px;margin:5px 0;"></p>
+        <button class="btn btn-primary" onclick="doSetup()" style="margin:5px;">Set Password</button>
+        <br>
+        <button class="btn btn-guest" onclick="startGuest()" style="margin:5px;">Play as Guest</button>
+    `;
+}
+
+function showLoginForm() {
+    const el = document.getElementById('splash-content');
+    el.innerHTML = `
+        <p style="margin-bottom:15px;color:#666;">Enter the parent password to manage accounts, or play as guest.</p>
+        <input type="password" id="login-pw" placeholder="Parent password" autocomplete="current-password"><br>
+        <p id="login-error" style="color:var(--error);min-height:20px;margin:5px 0;"></p>
+        <button class="btn btn-primary" onclick="doLogin()" style="margin:5px;">Enter</button>
+        <br>
+        <button class="btn btn-guest" onclick="startGuest()" style="margin:5px;">Play as Guest</button>
+    `;
+    // Enter key support
+    setTimeout(() => {
+        const inp = document.getElementById('login-pw');
+        if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    }, 50);
+}
+
+async function doSetup() {
+    const pw = document.getElementById('setup-pw').value;
+    const pw2 = document.getElementById('setup-pw2').value;
+    const err = document.getElementById('setup-error');
+    if (!pw || pw.length < 4) { err.textContent = 'Password must be at least 4 characters'; return; }
+    if (pw !== pw2) { err.textContent = 'Passwords do not match'; return; }
+    try {
+        const res = await api('POST', '/auth/setup-master', { password: pw });
+        authToken = res.token;
+        isAdmin = true;
+        showUserSelect();
+    } catch (e) {
+        err.textContent = e.error || 'Setup failed';
+    }
+}
+
+async function doLogin() {
+    const pw = document.getElementById('login-pw').value;
+    const err = document.getElementById('login-error');
+    if (!pw) { err.textContent = 'Please enter the password'; return; }
+    try {
+        const res = await api('POST', '/auth/verify-master', { password: pw });
+        authToken = res.token;
+        isAdmin = true;
+        showUserSelect();
+    } catch (e) {
+        err.textContent = e.error || 'Incorrect password';
+    }
+}
+
+function startGuest() {
+    isGuest = true;
+    currentUser = null;
+    isAdmin = false;
+    authToken = null;
+    showScreen('game');
+    applySettings({ operations: ['addition', 'subtraction'], ageGroup: '3-5', soundEnabled: true });
+    updateGameUI();
+    generateNewProblem();
+}
+
+async function showUserSelect() {
+    try {
+        const users = await api('GET', '/users');
+        const grid = document.getElementById('user-grid');
+        grid.innerHTML = '';
+        users.forEach(u => {
+            const card = document.createElement('div');
+            card.className = 'user-card';
+            card.innerHTML = `<div class="avatar">${u.avatar}</div><div class="username">${esc(u.username)}</div>`;
+            card.onclick = () => promptUserLogin(u);
+            grid.appendChild(card);
+        });
+        // Add "create user" card
+        const addCard = document.createElement('div');
+        addCard.className = 'user-card';
+        addCard.innerHTML = '<div class="avatar">+</div><div class="username">New Player</div>';
+        addCard.onclick = () => showCreateUser();
+        grid.appendChild(addCard);
+        showScreen('user-select');
+    } catch (e) {
+        showScreen('user-select');
+    }
+}
+
+function promptUserLogin(user) {
+    const grid = document.getElementById('user-grid');
+    // Replace grid with login prompt for this user
+    grid.innerHTML = `
+        <div style="text-align:center;width:100%;">
+            <div style="font-size:4rem;">${user.avatar}</div>
+            <h3>${esc(user.username)}</h3>
+            <input type="password" id="user-pw" placeholder="Your password" style="padding:10px;font-size:1.1rem;border:3px solid var(--secondary);border-radius:12px;text-align:center;margin:10px 0;width:80%;max-width:250px;">
+            <p id="user-login-error" style="color:var(--error);min-height:20px;"></p>
+            <button class="btn btn-primary" onclick="doUserLogin('${user.id}')">Play!</button>
+            <button class="btn btn-secondary" onclick="showUserSelect()" style="margin-left:8px;">Back</button>
+        </div>
+    `;
+    setTimeout(() => {
+        const inp = document.getElementById('user-pw');
+        if (inp) {
+            inp.focus();
+            inp.addEventListener('keydown', e => { if (e.key === 'Enter') doUserLogin(user.id); });
+        }
+    }, 50);
+}
+
+async function doUserLogin(userId) {
+    const pw = document.getElementById('user-pw').value;
+    const err = document.getElementById('user-login-error');
+    if (!pw) { err.textContent = 'Enter your password'; return; }
+    try {
+        const res = await api('POST', '/auth/login', { userId, password: pw });
+        authToken = res.token;
+        currentUser = res.user;
+        isGuest = false;
+        // Check if we already had admin token - keep admin status
+        showScreen('game');
+        applySettings(currentUser.settings || {});
+        updateGameUI();
+        generateNewProblem();
+    } catch (e) {
+        err.textContent = e.error || 'Login failed';
+    }
+}
+
+function showCreateUser() {
+    const grid = document.getElementById('user-grid');
+    const avatars = ['&#x1F98A;','&#x1F431;','&#x1F436;','&#x1F43B;','&#x1F984;','&#x1F981;','&#x1F43C;','&#x1F430;','&#x1F42F;','&#x1F9A5;','&#x1F438;','&#x1F422;'];
+    grid.innerHTML = `
+        <div style="text-align:center;width:100%;">
+            <h3>Create New Player</h3>
+            <div class="form-group"><label>Name</label><input type="text" id="new-username" placeholder="Player name" style="text-align:center;"></div>
+            <div class="form-group"><label>Password (simple is OK for kids)</label><input type="password" id="new-password" placeholder="Password" style="text-align:center;"></div>
+            <div class="form-group"><label>Pick an Avatar</label>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;" id="avatar-picker">
+                    ${avatars.map((a, i) => `<span style="font-size:2.5rem;cursor:pointer;padding:5px;border:3px solid transparent;border-radius:10px;" onclick="pickAvatar(this,'${a}')" ${i === 0 ? 'class="selected-avatar"' : ''}>${a}</span>`).join('')}
+                </div>
+                <input type="hidden" id="new-avatar" value="&#x1F98A;">
+            </div>
+            <p id="create-error" style="color:var(--error);min-height:20px;"></p>
+            <button class="btn btn-success" onclick="doCreateUser()">Create</button>
+            <button class="btn btn-secondary" onclick="showUserSelect()" style="margin-left:8px;">Cancel</button>
+        </div>
+    `;
+    // Select first avatar visually
+    const first = document.querySelector('#avatar-picker span');
+    if (first) first.style.borderColor = 'var(--primary)';
+}
+
+function pickAvatar(el, emoji) {
+    document.querySelectorAll('#avatar-picker span').forEach(s => s.style.borderColor = 'transparent');
+    el.style.borderColor = 'var(--primary)';
+    document.getElementById('new-avatar').value = emoji;
+}
+
+async function doCreateUser() {
+    const username = document.getElementById('new-username').value.trim();
+    const password = document.getElementById('new-password').value;
+    const avatar = document.getElementById('new-avatar').value;
+    const err = document.getElementById('create-error');
+    if (!username) { err.textContent = 'Please enter a name'; return; }
+    if (!password || password.length < 2) { err.textContent = 'Password must be at least 2 characters'; return; }
+    try {
+        await api('POST', '/users', { username, password, avatar });
+        showUserSelect();
+    } catch (e) {
+        err.textContent = e.error || 'Could not create user';
+    }
+}
+
+function showAdminLogin() {
+    if (isAdmin) {
+        openAdminPanel();
+        return;
+    }
+    // Prompt for admin password
+    const grid = document.getElementById('user-grid');
+    grid.innerHTML = `
+        <div style="text-align:center;width:100%;">
+            <h3>Admin Login</h3>
+            <input type="password" id="admin-pw" placeholder="Parent password" style="padding:10px;font-size:1.1rem;border:3px solid var(--secondary);border-radius:12px;text-align:center;margin:10px 0;width:80%;max-width:250px;">
+            <p id="admin-login-error" style="color:var(--error);min-height:20px;"></p>
+            <button class="btn btn-primary" onclick="doAdminLogin()">Login</button>
+            <button class="btn btn-secondary" onclick="showUserSelect()" style="margin-left:8px;">Back</button>
+        </div>
+    `;
+    setTimeout(() => {
+        const inp = document.getElementById('admin-pw');
+        if (inp) {
+            inp.focus();
+            inp.addEventListener('keydown', e => { if (e.key === 'Enter') doAdminLogin(); });
+        }
+    }, 50);
+}
+
+async function doAdminLogin() {
+    const pw = document.getElementById('admin-pw').value;
+    const err = document.getElementById('admin-login-error');
+    try {
+        const res = await api('POST', '/auth/verify-master', { password: pw });
+        authToken = res.token;
+        isAdmin = true;
+        openAdminPanel();
+    } catch (e) {
+        err.textContent = e.error || 'Incorrect password';
+    }
+}
+
+function logout() {
+    authToken = null;
+    currentUser = null;
+    isGuest = false;
+    isAdmin = false;
+    problemCount = 0;
+    document.getElementById('game-box').classList.remove('bonus-active');
+    showScreen('splash');
+    initApp();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAME ENGINE
+// ══════════════════════════════════════════════════════════════════
+function getSelectedOperations() {
+    const ops = [];
+    if (document.getElementById('op-addition').checked) ops.push('addition');
+    if (document.getElementById('op-subtraction').checked) ops.push('subtraction');
+    if (document.getElementById('op-multiplication').checked) ops.push('multiplication');
+    if (document.getElementById('op-division').checked) ops.push('division');
+    if (ops.length === 0) {
+        document.getElementById('op-addition').checked = true;
+        ops.push('addition');
+    }
+    return ops;
+}
+
+function getAgeGroup() {
+    return document.getElementById('age-selector').value;
+}
+
+function applySettings(settings) {
+    if (settings.operations) {
+        document.getElementById('op-addition').checked = settings.operations.includes('addition');
+        document.getElementById('op-subtraction').checked = settings.operations.includes('subtraction');
+        document.getElementById('op-multiplication').checked = settings.operations.includes('multiplication');
+        document.getElementById('op-division').checked = settings.operations.includes('division');
+    }
+    if (settings.ageGroup) {
+        document.getElementById('age-selector').value = settings.ageGroup;
+    }
+    if (settings.soundEnabled !== undefined) {
+        soundEnabled = settings.soundEnabled;
+    }
+}
+
+function generateNewProblem() {
+    problemCount++;
+    firstTry = true;
+
+    // Bonus round every 10th problem
+    isBonusRound = (problemCount % 10 === 0) && problemCount > 0;
+    const gameBox = document.getElementById('game-box');
+    if (isBonusRound) {
+        gameBox.style.border = '3px solid var(--accent)';
+        gameBox.style.boxShadow = '0 0 20px rgba(255,235,59,0.5)';
+        playBonusRoundSound();
+    } else {
+        gameBox.style.border = '';
+        gameBox.style.boxShadow = '';
+    }
+
+    const ops = getSelectedOperations();
+    currentOperation = ops[Math.floor(Math.random() * ops.length)];
+    const ageGroup = getAgeGroup();
+    const iconIdx = Math.floor(Math.random() * iconChars.length);
+    currentIcon = iconChars[iconIdx];
+
+    generateNumbers(currentOperation, ageGroup);
+    displayProblem();
+    generateAnswerOptions();
+    updateGameTitle();
+
+    document.getElementById('message').textContent = isBonusRound ? 'BONUS ROUND! Double coins!' : 'Choose the correct answer!';
+    document.getElementById('message').style.color = isBonusRound ? '#FFA000' : '';
+}
+
+function generateNumbers(operation, ageGroup) {
+    let maxFirst, maxSecond;
+    switch (ageGroup) {
+        case '3-5': maxFirst = 5; maxSecond = 5; break;
+        case '6-8': maxFirst = 10; maxSecond = 10; break;
+        case '9+': maxFirst = 20; maxSecond = 12; break;
+        default: maxFirst = 5; maxSecond = 5;
+    }
+
+    switch (operation) {
+        case 'addition':
+            firstNumber = randInt(1, maxFirst);
+            secondNumber = randInt(1, maxSecond);
+            correctAnswer = firstNumber + secondNumber;
+            break;
+        case 'subtraction':
+            secondNumber = randInt(1, maxSecond);
+            firstNumber = secondNumber + randInt(1, maxFirst);
+            correctAnswer = firstNumber - secondNumber;
+            break;
+        case 'multiplication':
+            if (ageGroup === '3-5') {
+                firstNumber = randInt(1, 3);
+                secondNumber = randInt(1, 3);
+            } else {
+                firstNumber = randInt(1, maxFirst);
+                secondNumber = randInt(1, maxSecond);
+            }
+            correctAnswer = firstNumber * secondNumber;
+            break;
+        case 'division':
+            secondNumber = randInt(2, Math.max(3, maxSecond));
+            let maxQ = ageGroup === '3-5' ? 3 : ageGroup === '6-8' ? 5 : 10;
+            correctAnswer = randInt(1, maxQ);
+            firstNumber = secondNumber * correctAnswer;
+            break;
+    }
+}
+
+function displayProblem() {
+    const symbols = { addition: '+', subtraction: '-', multiplication: '\u00D7', division: '\u00F7' };
+    const sym = symbols[currentOperation];
+
+    document.getElementById('formula').textContent = `${firstNumber} ${sym} ? = ${correctAnswer}`;
+
+    document.getElementById('step1-number').textContent = firstNumber;
+    document.getElementById('step2-number').textContent = `${sym} ?`;
+    document.getElementById('step3-number').textContent = correctAnswer;
+
+    const first = document.getElementById('first-number-icons');
+    const second = document.getElementById('second-number-icons');
+    const result = document.getElementById('result-icons');
+    first.textContent = '';
+    second.textContent = '';
+    result.textContent = '';
+
+    // Cap icons at 20 to avoid visual overload
+    const cap = 20;
+    for (let i = 0; i < Math.min(firstNumber, cap); i++) first.textContent += currentIcon + ' ';
+    for (let i = 0; i < Math.min(correctAnswer, cap); i++) result.textContent += currentIcon + ' ';
+}
+
+function generateAnswerOptions() {
+    const container = document.getElementById('answer-options');
+    container.innerHTML = '';
+    const ageGroup = getAgeGroup();
+    let options = [secondNumber];
+    let attempts = 0;
+    while (options.length < 4 && attempts < 30) {
+        attempts++;
+        const offset = ageGroup === '3-5' ? randInt(1, 3) : randInt(1, 5);
+        const wrong = Math.random() < 0.5 ? secondNumber + offset : Math.max(1, secondNumber - offset);
+        if (!options.includes(wrong) && wrong > 0) options.push(wrong);
+    }
+    // Fallback
+    while (options.length < 4) {
+        const n = secondNumber + options.length;
+        if (!options.includes(n)) options.push(n);
+        else options.push(secondNumber + options.length + 3);
+    }
+    shuffle(options);
+
+    options.forEach(opt => {
+        const btn = document.createElement('div');
+        btn.className = 'answer-option';
+        btn.textContent = opt;
+        btn.addEventListener('click', function() { checkAnswer(opt, this); });
+        container.appendChild(btn);
+    });
+}
+
+function checkAnswer(selected, btnEl) {
+    const msgEl = document.getElementById('message');
+    // Don't allow more clicks after correct
+    if (msgEl.dataset.answered === 'true') return;
+
+    const stats = getStats();
+    const today = new Date().toISOString().slice(0, 10);
+
+    // Track operation attempt
+    if (stats.problemsByOperation[currentOperation] !== undefined) {
+        // Only count on first try per problem
+        if (firstTry) {
+            stats.totalProblems++;
+            stats.problemsByOperation[currentOperation]++;
+            if (!stats.dailyActivity[today]) stats.dailyActivity[today] = 0;
+            stats.dailyActivity[today]++;
+        }
+    }
+
+    if (selected === secondNumber) {
+        // Correct!
+        playCorrectSound();
+        btnEl.classList.add('correct');
+        msgEl.dataset.answered = 'true';
+
+        stats.correctAnswers++;
+        stats.correctByOperation[currentOperation]++;
+        stats.currentStreak++;
+        if (stats.currentStreak > stats.bestStreak) stats.bestStreak = stats.currentStreak;
+
+        // Calculate coins
+        let coins = 5;
+        if (firstTry) coins += 3; // first try bonus
+        coins += Math.floor(stats.currentStreak / 5); // streak bonus
+        if (isBonusRound) {
+            coins *= 2;
+            stats.bonusRoundsCompleted++;
+        }
+
+        awardCoins(coins);
+        updateStreakDisplay(stats.currentStreak);
+
+        // Reveal the hidden number
+        const sym = { addition: '+', subtraction: '-', multiplication: '\u00D7', division: '\u00F7' }[currentOperation];
+        document.getElementById('step2-number').textContent = `${sym} ${secondNumber}`;
+        const secondEl = document.getElementById('second-number-icons');
+        secondEl.textContent = '';
+        if (currentOperation === 'addition' || currentOperation === 'subtraction') {
+            for (let i = 0; i < Math.min(secondNumber, 20); i++) secondEl.textContent += currentIcon + ' ';
+        }
+
+        // Show message
+        const messages = [
+            'Great job!', 'Correct!', 'Awesome!', 'Perfect!',
+            'Amazing!', 'Wow!', 'Fantastic!', 'Super!', 'Well done!', 'You rock!'
+        ];
+        msgEl.textContent = messages[Math.floor(Math.random() * messages.length)];
+        msgEl.style.color = '#4CAF50';
+
+        // Streak milestones
+        if (stats.currentStreak > 0 && stats.currentStreak % 5 === 0) {
+            playStreakSound();
+            burstConfetti();
+        }
+
+        // Disable all buttons
+        document.querySelectorAll('#answer-options .answer-option').forEach(b => b.style.pointerEvents = 'none');
+
+        // Check badges
+        checkBadges(stats);
+
+        // Save stats
+        saveStats(stats);
+
+        // Auto-advance after delay
+        setTimeout(() => {
+            msgEl.dataset.answered = 'false';
+            generateNewProblem();
+        }, 1800);
+    } else {
+        // Wrong
+        playWrongSound();
+        btnEl.classList.add('incorrect');
+        btnEl.style.pointerEvents = 'none';
+        firstTry = false;
+        stats.wrongAnswers++;
+        stats.currentStreak = 0;
+        updateStreakDisplay(0);
+
+        const messages = [
+            'Try again!', 'Not quite!', 'Keep trying!',
+            'Almost!', 'Give it another go!', 'You can do it!'
+        ];
+        msgEl.textContent = messages[Math.floor(Math.random() * messages.length)];
+        msgEl.style.color = '#F44336';
+
+        setTimeout(() => {
+            btnEl.classList.remove('incorrect');
+            btnEl.style.opacity = '0.4';
+        }, 600);
+
+        saveStats(stats);
+    }
+}
+
+function updateGameTitle() {
+    const ops = getSelectedOperations();
+    const titleEl = document.getElementById('game-title');
+    if (ops.length === 1) {
+        const names = { addition: 'Addition', subtraction: 'Subtraction', multiplication: 'Multiplication', division: 'Division' };
+        titleEl.textContent = 'Fun with ' + (names[ops[0]] || 'Numbers') + '!';
+    } else {
+        titleEl.textContent = isBonusRound ? 'BONUS ROUND!' : 'Math Adventure!';
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// STATS HELPERS
+// ══════════════════════════════════════════════════════════════════
+function getStats() {
+    if (isGuest || !currentUser) return { ...guestStats };
+    return { ...(currentUser.stats || guestStats) };
+}
+
+function getCoins() {
+    if (isGuest || !currentUser) return guestCoins;
+    return currentUser.coins || 0;
+}
+
+function getBadges() {
+    if (isGuest || !currentUser) return [...guestBadges];
+    return [...(currentUser.badges || [])];
+}
+
+async function saveStats(stats) {
+    if (isGuest || !currentUser) {
+        Object.assign(guestStats, stats);
+        return;
+    }
+    currentUser.stats = stats;
+    // Also save settings
+    currentUser.settings = {
+        operations: getSelectedOperations(),
+        ageGroup: getAgeGroup(),
+        soundEnabled
+    };
+    try {
+        const updated = await api('PUT', '/users/' + currentUser.id, {
+            stats: currentUser.stats,
+            coins: currentUser.coins,
+            badges: currentUser.badges,
+            settings: currentUser.settings
+        });
+        currentUser = updated;
+    } catch (e) {
+        console.error('Save failed:', e);
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// COIN SYSTEM
+// ══════════════════════════════════════════════════════════════════
+function awardCoins(amount) {
+    if (isGuest || !currentUser) {
+        guestCoins += amount;
+        guestStats.totalCoinsEarned += amount;
+    } else {
+        currentUser.coins = (currentUser.coins || 0) + amount;
+        currentUser.stats.totalCoinsEarned = (currentUser.stats.totalCoinsEarned || 0) + amount;
+    }
+    playCoinSound();
+    updateCoinDisplay();
+    updateProgressBar();
+    floatingCoinAnimation(amount);
+}
+
+function updateCoinDisplay() {
+    document.getElementById('coin-count').textContent = getCoins();
+}
+
+function updateStreakDisplay(streak) {
+    const el = document.getElementById('streak-display');
+    el.innerHTML = '&#x1F525; ' + streak;
+    el.classList.toggle('inactive', streak === 0);
+}
+
+function updateGameUI() {
+    updateCoinDisplay();
+    const stats = getStats();
+    updateStreakDisplay(stats.currentStreak || 0);
+    updateProgressBar();
+}
+
+function updateProgressBar() {
+    // Find cheapest available prize
+    const coins = getCoins();
+    // Use cached prizes or a default
+    const cheapest = 50; // Default prize cost
+    const pct = Math.min(100, (coins / cheapest) * 100);
+    document.getElementById('progress-bar').style.width = pct + '%';
+    if (coins >= cheapest) {
+        document.getElementById('progress-label').textContent = 'You can buy a prize! Visit the Store!';
+    } else {
+        document.getElementById('progress-label').textContent = `${coins} / ${cheapest} coins to next prize`;
+    }
+}
+
+function floatingCoinAnimation(amount) {
+    const coinEl = document.getElementById('coin-display');
+    const rect = coinEl.getBoundingClientRect();
+    const div = document.createElement('div');
+    div.className = 'floating-coins';
+    div.textContent = '+' + amount;
+    div.style.left = rect.left + 'px';
+    div.style.top = (rect.top - 10) + 'px';
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 1200);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// STORE
+// ══════════════════════════════════════════════════════════════════
+async function openStore() {
+    document.getElementById('store-coins').textContent = getCoins();
+    const container = document.getElementById('store-prizes');
+    container.innerHTML = '<p style="color:#888;">Loading...</p>';
+    openModal('modal-store');
+
+    try {
+        const prizes = await api('GET', '/prizes');
+        container.innerHTML = '';
+        if (prizes.length === 0) {
+            container.innerHTML = '<p style="color:#888;">No prizes available yet.</p>';
+        }
+        prizes.forEach(p => {
+            const canBuy = getCoins() >= p.cost;
+            const card = document.createElement('div');
+            card.className = 'prize-card';
+            card.innerHTML = `
+                <div class="prize-emoji">${p.emoji}</div>
+                <div class="prize-info">
+                    <div class="name">${esc(p.name)}</div>
+                    <div class="desc">${esc(p.description)}</div>
+                </div>
+                <div style="text-align:center;">
+                    <div class="prize-cost">${p.cost} coins</div>
+                    ${(!isGuest && currentUser) ? `<button class="btn btn-small ${canBuy ? 'btn-success' : 'btn-secondary'}" ${canBuy ? '' : 'disabled'} onclick="purchasePrize('${p.id}','${esc(p.name)}',${p.cost})">Buy</button>` : '<span style="font-size:0.8rem;color:#888;">Login to buy</span>'}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    } catch (e) {
+        container.innerHTML = '<p style="color:var(--error);">Could not load prizes.</p>';
+    }
+
+    // My prizes
+    renderMyPrizes('my-prizes');
+}
+
+async function purchasePrize(prizeId, name, cost) {
+    if (getCoins() < cost) return;
+    if (!confirm(`Buy "${name}" for ${cost} coins?`)) return;
+    try {
+        const updated = await api('POST', '/users/' + currentUser.id + '/purchase', { prizeId });
+        currentUser = updated;
+        playPurchaseSound();
+        burstConfetti();
+        updateCoinDisplay();
+        openStore(); // Refresh
+    } catch (e) {
+        alert(e.error || 'Purchase failed');
+    }
+}
+
+function renderMyPrizes(containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    if (isGuest || !currentUser) {
+        container.innerHTML = '<p style="color:#888;">Login to see purchased prizes.</p>';
+        return;
+    }
+    const prizes = currentUser.purchasedPrizes || [];
+    if (prizes.length === 0) {
+        container.innerHTML = '<p style="color:#888;">No prizes purchased yet.</p>';
+        return;
+    }
+    prizes.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'prize-card';
+        div.innerHTML = `
+            <div class="prize-emoji">${p.emoji}</div>
+            <div class="prize-info">
+                <div class="name">${esc(p.name)}</div>
+                <div class="desc">Purchased ${new Date(p.purchasedAt).toLocaleDateString()}</div>
+            </div>
+            <span class="prize-status ${p.fulfilled ? 'fulfilled' : 'pending'}">${p.fulfilled ? 'Received!' : 'Pending'}</span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BADGES
+// ══════════════════════════════════════════════════════════════════
+function checkBadges(stats) {
+    const earned = getBadges();
+    BADGES.forEach(badge => {
+        if (earned.includes(badge.id)) return;
+        if (badge.check(stats, currentUser)) {
+            earned.push(badge.id);
+            playBadgeSound();
+            showBadgePopup(badge);
+        }
+    });
+    if (isGuest || !currentUser) {
+        guestBadges = earned;
+    } else {
+        currentUser.badges = earned;
+    }
+}
+
+function showBadgePopup(badge) {
+    const div = document.createElement('div');
+    div.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border:4px solid var(--accent);border-radius:20px;padding:30px;text-align:center;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,0.3);animation:correctAnim 0.5s;';
+    div.innerHTML = `<div style="font-size:4rem;">${badge.icon}</div><h3>Badge Earned!</h3><p><strong>${badge.name}</strong></p><p style="color:#888;font-size:0.9rem;">${badge.desc}</p>`;
+    document.body.appendChild(div);
+    burstConfetti();
+    setTimeout(() => div.remove(), 2500);
+}
+
+function openBadges() {
+    const grid = document.getElementById('badge-grid');
+    grid.innerHTML = '';
+    const earned = getBadges();
+    BADGES.forEach(badge => {
+        const isEarned = earned.includes(badge.id);
+        const card = document.createElement('div');
+        card.className = 'badge-card ' + (isEarned ? 'earned' : 'locked');
+        card.innerHTML = `
+            <div class="badge-icon">${badge.icon}</div>
+            <div class="badge-name">${badge.name}</div>
+            <div style="font-size:0.7rem;color:#888;margin-top:2px;">${isEarned ? badge.desc : '???'}</div>
+        `;
+        grid.appendChild(card);
+    });
+    openModal('modal-badges');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROFILE & CALENDAR
+// ══════════════════════════════════════════════════════════════════
+function openProfile() {
+    const stats = getStats();
+    const coins = getCoins();
+    document.getElementById('profile-title').textContent = currentUser ? currentUser.avatar + ' ' + currentUser.username : 'Guest Profile';
+
+    const accuracy = stats.totalProblems > 0 ? Math.round((stats.correctAnswers / stats.totalProblems) * 100) : 0;
+    document.getElementById('profile-stats').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center;">
+            <div style="background:var(--neutral);padding:10px;border-radius:10px;"><strong>${coins}</strong><br><small>Coins</small></div>
+            <div style="background:var(--neutral);padding:10px;border-radius:10px;"><strong>${stats.correctAnswers}</strong><br><small>Correct</small></div>
+            <div style="background:var(--neutral);padding:10px;border-radius:10px;"><strong>${stats.bestStreak}</strong><br><small>Best Streak</small></div>
+            <div style="background:var(--neutral);padding:10px;border-radius:10px;"><strong>${accuracy}%</strong><br><small>Accuracy</small></div>
+        </div>
+    `;
+
+    // Calendar
+    renderCalendar(stats.dailyActivity);
+
+    // Prizes
+    renderMyPrizes('profile-prizes');
+    openModal('modal-profile');
+}
+
+function renderCalendar(activity) {
+    const container = document.getElementById('profile-calendar');
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const today = now.getDate();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    let html = '<div class="calendar-grid">';
+    ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => html += `<div class="day-header">${d}</div>`);
+    for (let i = 0; i < firstDay; i++) html += '<div class="day empty"></div>';
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const played = activity && activity[dateStr];
+        const isToday = d === today;
+        html += `<div class="day${played ? ' played' : ''}${isToday ? ' today' : ''}">${played ? '&#x2B50;' : d}</div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function openHelp() { openModal('modal-help'); }
+
+// ══════════════════════════════════════════════════════════════════
+// ADMIN PANEL
+// ══════════════════════════════════════════════════════════════════
+function switchAdminTab(tab) {
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.admin-tab[onclick="switchAdminTab('${tab}')"]`).classList.add('active');
+    document.getElementById('admin-' + tab).classList.add('active');
+
+    switch(tab) {
+        case 'users': loadAdminUsers(); break;
+        case 'prizes': loadAdminPrizes(); break;
+        case 'fulfillment': loadAdminFulfillment(); break;
+        case 'stats': loadAdminStats(); break;
+        case 'settings': loadAdminSettings(); break;
+    }
+}
+
+async function openAdminPanel() {
+    openModal('modal-admin');
+    loadAdminUsers();
+}
+
+async function loadAdminUsers() {
+    const panel = document.getElementById('admin-users');
+    try {
+        const users = await api('GET', '/users');
+        let html = `<button class="btn btn-success btn-small" onclick="adminCreateUser()" style="margin-bottom:10px;">+ Add Player</button>`;
+        if (users.length === 0) {
+            html += '<p style="color:#888;">No players yet.</p>';
+        } else {
+            html += '<table class="admin-table"><tr><th>Avatar</th><th>Name</th><th>Actions</th></tr>';
+            users.forEach(u => {
+                html += `<tr><td>${u.avatar}</td><td>${esc(u.username)}</td><td>
+                    <button class="btn btn-small btn-secondary" onclick="adminResetUser('${u.id}','${esc(u.username)}')">Reset</button>
+                    <button class="btn btn-small btn-danger" onclick="adminDeleteUser('${u.id}','${esc(u.username)}')">Delete</button>
+                </td></tr>`;
+            });
+            html += '</table>';
+        }
+        panel.innerHTML = html;
+    } catch (e) {
+        panel.innerHTML = '<p style="color:var(--error);">Could not load users.</p>';
+    }
+}
+
+function adminCreateUser() {
+    const panel = document.getElementById('admin-users');
+    const avatars = ['&#x1F98A;','&#x1F431;','&#x1F436;','&#x1F43B;','&#x1F984;','&#x1F981;','&#x1F43C;','&#x1F430;','&#x1F42F;','&#x1F9A5;','&#x1F438;','&#x1F422;'];
+    panel.innerHTML = `
+        <h3>Add New Player</h3>
+        <div class="form-group"><label>Name</label><input type="text" id="admin-new-name"></div>
+        <div class="form-group"><label>Password</label><input type="password" id="admin-new-pw"></div>
+        <div class="form-group"><label>Avatar</label>
+            <select id="admin-new-avatar" style="font-size:1.5rem;">${avatars.map(a => `<option value="${a}">${a}</option>`).join('')}</select>
+        </div>
+        <p id="admin-create-error" style="color:var(--error);min-height:20px;"></p>
+        <button class="btn btn-success" onclick="adminDoCreateUser()">Create</button>
+        <button class="btn btn-secondary" onclick="loadAdminUsers()">Cancel</button>
+    `;
+}
+
+async function adminDoCreateUser() {
+    const username = document.getElementById('admin-new-name').value.trim();
+    const password = document.getElementById('admin-new-pw').value;
+    const avatar = document.getElementById('admin-new-avatar').value;
+    const err = document.getElementById('admin-create-error');
+    if (!username || !password) { err.textContent = 'Name and password required'; return; }
+    try {
+        await api('POST', '/users', { username, password, avatar });
+        loadAdminUsers();
+    } catch (e) {
+        err.textContent = e.error || 'Failed to create user';
+    }
+}
+
+async function adminDeleteUser(id, name) {
+    if (!confirm(`Delete player "${name}"? This cannot be undone.`)) return;
+    try {
+        await api('DELETE', '/users/' + id);
+        loadAdminUsers();
+    } catch (e) {
+        alert(e.error || 'Failed to delete user');
+    }
+}
+
+async function adminResetUser(id, name) {
+    if (!confirm(`Reset all progress for "${name}"? Coins, badges, and prizes will be cleared.`)) return;
+    try {
+        await api('POST', '/users/' + id + '/reset');
+        loadAdminUsers();
+    } catch (e) {
+        alert(e.error || 'Failed to reset user');
+    }
+}
+
+async function loadAdminPrizes() {
+    const panel = document.getElementById('admin-prizes');
+    try {
+        const prizes = await api('GET', '/prizes');
+        let html = `<button class="btn btn-success btn-small" onclick="adminAddPrize()" style="margin-bottom:10px;">+ Add Prize</button>`;
+        if (prizes.length === 0) {
+            html += '<p style="color:#888;">No prizes.</p>';
+        } else {
+            html += '<table class="admin-table"><tr><th></th><th>Name</th><th>Cost</th><th>Actions</th></tr>';
+            prizes.forEach(p => {
+                html += `<tr><td>${p.emoji}</td><td>${esc(p.name)}</td><td>${p.cost}</td><td>
+                    <button class="btn btn-small btn-secondary" onclick="adminEditPrize('${p.id}')">Edit</button>
+                    <button class="btn btn-small btn-danger" onclick="adminDeletePrize('${p.id}','${esc(p.name)}')">Delete</button>
+                </td></tr>`;
+            });
+            html += '</table>';
+        }
+        panel.innerHTML = html;
+    } catch (e) {
+        panel.innerHTML = '<p style="color:var(--error);">Could not load prizes.</p>';
+    }
+}
+
+function adminAddPrize() {
+    const panel = document.getElementById('admin-prizes');
+    panel.innerHTML = `
+        <h3>Add Prize</h3>
+        <div class="form-row">
+            <div class="form-group"><label>Name</label><input type="text" id="prize-name"></div>
+            <div class="form-group" style="max-width:80px;"><label>Emoji</label><input type="text" id="prize-emoji" value="&#x1F381;"></div>
+        </div>
+        <div class="form-group"><label>Description</label><input type="text" id="prize-desc"></div>
+        <div class="form-group"><label>Cost (coins)</label><input type="number" id="prize-cost" min="1" value="50"></div>
+        <p id="prize-error" style="color:var(--error);min-height:20px;"></p>
+        <button class="btn btn-success" onclick="adminDoAddPrize()">Add</button>
+        <button class="btn btn-secondary" onclick="loadAdminPrizes()">Cancel</button>
+    `;
+}
+
+async function adminDoAddPrize() {
+    const name = document.getElementById('prize-name').value.trim();
+    const emoji = document.getElementById('prize-emoji').value.trim();
+    const description = document.getElementById('prize-desc').value.trim();
+    const cost = parseInt(document.getElementById('prize-cost').value);
+    const err = document.getElementById('prize-error');
+    if (!name || !cost) { err.textContent = 'Name and cost required'; return; }
+    try {
+        await api('POST', '/prizes', { name, description, cost, emoji });
+        loadAdminPrizes();
+    } catch (e) {
+        err.textContent = e.error || 'Failed to add prize';
+    }
+}
+
+async function adminEditPrize(id) {
+    const panel = document.getElementById('admin-prizes');
+    try {
+        const prizes = await api('GET', '/prizes');
+        const p = prizes.find(x => x.id === id);
+        if (!p) return;
+        panel.innerHTML = `
+            <h3>Edit Prize</h3>
+            <div class="form-row">
+                <div class="form-group"><label>Name</label><input type="text" id="prize-name" value="${esc(p.name)}"></div>
+                <div class="form-group" style="max-width:80px;"><label>Emoji</label><input type="text" id="prize-emoji" value="${p.emoji}"></div>
+            </div>
+            <div class="form-group"><label>Description</label><input type="text" id="prize-desc" value="${esc(p.description || '')}"></div>
+            <div class="form-group"><label>Cost (coins)</label><input type="number" id="prize-cost" min="1" value="${p.cost}"></div>
+            <p id="prize-error" style="color:var(--error);min-height:20px;"></p>
+            <button class="btn btn-success" onclick="adminDoEditPrize('${id}')">Save</button>
+            <button class="btn btn-secondary" onclick="loadAdminPrizes()">Cancel</button>
+        `;
+    } catch (e) {
+        panel.innerHTML = '<p style="color:var(--error);">Failed to load prize.</p>';
+    }
+}
+
+async function adminDoEditPrize(id) {
+    const name = document.getElementById('prize-name').value.trim();
+    const emoji = document.getElementById('prize-emoji').value.trim();
+    const description = document.getElementById('prize-desc').value.trim();
+    const cost = parseInt(document.getElementById('prize-cost').value);
+    const err = document.getElementById('prize-error');
+    if (!name || !cost) { err.textContent = 'Name and cost required'; return; }
+    try {
+        await api('PUT', '/prizes/' + id, { name, description, cost, emoji });
+        loadAdminPrizes();
+    } catch (e) {
+        err.textContent = e.error || 'Failed to update prize';
+    }
+}
+
+async function adminDeletePrize(id, name) {
+    if (!confirm(`Delete prize "${name}"?`)) return;
+    try {
+        await api('DELETE', '/prizes/' + id);
+        loadAdminPrizes();
+    } catch (e) {
+        alert(e.error || 'Failed to delete prize');
+    }
+}
+
+async function loadAdminFulfillment() {
+    const panel = document.getElementById('admin-fulfillment');
+    try {
+        const pending = await api('GET', '/admin/pending-prizes');
+        if (pending.length === 0) {
+            panel.innerHTML = '<p style="color:#888;">No pending prizes to fulfill.</p>';
+            return;
+        }
+        let html = '<table class="admin-table"><tr><th>Player</th><th>Prize</th><th>Date</th><th>Action</th></tr>';
+        pending.forEach(p => {
+            html += `<tr><td>${p.avatar} ${esc(p.username)}</td><td>${p.emoji} ${esc(p.name)}</td><td>${new Date(p.purchasedAt).toLocaleDateString()}</td>
+            <td><button class="btn btn-small btn-success" onclick="adminFulfillPrize('${p.userId}',${p.prizeIdx})">Mark Done</button></td></tr>`;
+        });
+        html += '</table>';
+        panel.innerHTML = html;
+    } catch (e) {
+        panel.innerHTML = '<p style="color:var(--error);">Could not load pending prizes.</p>';
+    }
+}
+
+async function adminFulfillPrize(userId, prizeIdx) {
+    try {
+        await api('POST', '/users/' + userId + '/prizes/' + prizeIdx + '/fulfill');
+        loadAdminFulfillment();
+    } catch (e) {
+        alert(e.error || 'Failed to fulfill prize');
+    }
+}
+
+async function loadAdminStats() {
+    const panel = document.getElementById('admin-stats');
+    try {
+        const data = await api('GET', '/admin/stats');
+        if (data.users.length === 0) {
+            panel.innerHTML = '<p style="color:#888;">No players yet.</p>';
+            return;
+        }
+        let html = '';
+        const maxProblems = Math.max(...data.users.map(u => u.stats.totalProblems || 0), 1);
+        data.users.forEach(u => {
+            const acc = u.stats.totalProblems > 0 ? Math.round((u.stats.correctAnswers / u.stats.totalProblems) * 100) : 0;
+            const barWidth = Math.max(4, (u.stats.totalProblems / maxProblems) * 100);
+            html += `
+                <div style="border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:10px;">
+                    <strong>${u.avatar} ${esc(u.username)}</strong>
+                    <span style="float:right;color:#888;font-size:0.85rem;">Last active: ${u.lastActive ? new Date(u.lastActive).toLocaleDateString() : 'Never'}</span>
+                    <div class="stat-bar-container">
+                        <span class="stat-label">Problems: ${u.stats.totalProblems}</span>
+                        <div class="stat-bar" style="width:${barWidth}%;background:var(--secondary);"></div>
+                    </div>
+                    <div style="font-size:0.85rem;color:#666;margin-top:4px;">
+                        Correct: ${u.stats.correctAnswers} (${acc}%) | Streak: ${u.stats.bestStreak} | Coins: ${u.coins} | Badges: ${u.badges}
+                    </div>
+                </div>
+            `;
+        });
+        panel.innerHTML = html;
+    } catch (e) {
+        panel.innerHTML = '<p style="color:var(--error);">Could not load stats.</p>';
+    }
+}
+
+function loadAdminSettings() {
+    const panel = document.getElementById('admin-settings');
+    panel.innerHTML = `
+        <h3>Change Parent Password</h3>
+        <div class="form-group"><label>Current Password</label><input type="password" id="settings-old-pw"></div>
+        <div class="form-group"><label>New Password</label><input type="password" id="settings-new-pw"></div>
+        <p id="settings-pw-error" style="color:var(--error);min-height:20px;"></p>
+        <button class="btn btn-primary" onclick="adminChangePassword()">Change Password</button>
+        <hr style="margin:20px 0;">
+        <h3>Data Management</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+            <button class="btn btn-secondary" onclick="adminExport()">Export Data</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">Import Data</button>
+            <input type="file" id="import-file" accept=".json" style="display:none" onchange="adminImport(event)">
+            <button class="btn btn-danger" onclick="adminReset()">Reset Everything</button>
+        </div>
+    `;
+}
+
+async function adminChangePassword() {
+    const oldPw = document.getElementById('settings-old-pw').value;
+    const newPw = document.getElementById('settings-new-pw').value;
+    const err = document.getElementById('settings-pw-error');
+    if (!oldPw || !newPw) { err.textContent = 'Both fields required'; return; }
+    try {
+        await api('POST', '/auth/change-master', { currentPassword: oldPw, newPassword: newPw });
+        err.style.color = 'var(--success)';
+        err.textContent = 'Password changed!';
+        document.getElementById('settings-old-pw').value = '';
+        document.getElementById('settings-new-pw').value = '';
+    } catch (e) {
+        err.style.color = 'var(--error)';
+        err.textContent = e.error || 'Failed to change password';
+    }
+}
+
+async function adminExport() {
+    try {
+        const data = await api('GET', '/admin/export');
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'math-adventure-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+        a.click();
+    } catch (e) {
+        alert('Export failed: ' + (e.error || 'unknown error'));
+    }
+}
+
+async function adminImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!confirm('This will REPLACE all current data. Are you sure?')) { event.target.value = ''; return; }
+    try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        await api('POST', '/admin/import', data);
+        alert('Data imported successfully!');
+    } catch (e) {
+        alert('Import failed: ' + (e.error || e.message || 'invalid file'));
+    }
+    event.target.value = '';
+}
+
+async function adminReset() {
+    const pw = prompt('Enter parent password to confirm FULL RESET:');
+    if (!pw) return;
+    if (!confirm('This will delete ALL users, progress, and prizes. Are you SURE?')) return;
+    try {
+        await api('POST', '/admin/reset', { confirmPassword: pw });
+        alert('Reset complete.');
+        loadAdminUsers();
+    } catch (e) {
+        alert(e.error || 'Reset failed');
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ANIMATIONS
+// ══════════════════════════════════════════════════════════════════
+function burstConfetti() {
+    const colors = ['#FF6B6B','#4ECDC4','#45B7D1','#FDCB6E','#6C5CE7','#FF9FF3','#54A0FF','#5CD859'];
+    for (let i = 0; i < 30; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.left = Math.random() * 100 + 'vw';
+        piece.style.top = '-10px';
+        piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+        piece.style.animationDuration = (1.5 + Math.random()) + 's';
+        piece.style.animationDelay = (Math.random() * 0.3) + 's';
+        document.body.appendChild(piece);
+        setTimeout(() => piece.remove(), 3000);
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// EVENT LISTENERS
+// ══════════════════════════════════════════════════════════════════
+document.querySelectorAll('.operation-checkbox').forEach(cb => {
+    cb.addEventListener('change', () => {
+        if (currentUser && !isGuest) {
+            currentUser.settings = currentUser.settings || {};
+            currentUser.settings.operations = getSelectedOperations();
+        }
+    });
+});
+
+document.getElementById('age-selector').addEventListener('change', () => {
+    if (currentUser && !isGuest) {
+        currentUser.settings = currentUser.settings || {};
+        currentUser.settings.ageGroup = getAgeGroup();
+    }
+});
+
+// Initialize on first user interaction (for audio context)
+document.addEventListener('click', function initAudio() {
+    ensureAudio();
+    document.removeEventListener('click', initAudio);
+}, { once: true });
+
+// ══════════════════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════════════════
+initApp();
+</script>
+</body>
+</html>

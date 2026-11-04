@@ -2,8 +2,16 @@ const express = require('express');
 const path = require('path');
 require('dotenv').config();
 
+const mathAdventureRoutes = require('./math-adventure-routes');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// JSON body parser (before static files so API routes work)
+app.use(express.json({ limit: '5mb' }));
+
+// Math Adventure API routes
+app.use('/api/math-adventure', mathAdventureRoutes);
 
 // Serve static files
 app.use(express.static(path.join(__dirname, '..', 'websites')));
