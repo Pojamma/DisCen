@@ -160,15 +160,16 @@
             gap: 10px;
         }
         .step {
-            display: flex;
+            display: grid;
+            grid-template-columns: 80px 1fr;
             align-items: center;
             font-size: 1.5rem;
             gap: 10px;
             width: 100%;
-            justify-content: center;
+            max-width: 500px;
         }
-        .step-number { min-width: 80px; text-align: right; font-weight: bold; }
-        .step-icons { display: flex; flex-wrap: wrap; gap: 5px; font-size: 1.8rem; }
+        .step-number { text-align: right; font-weight: bold; }
+        .step-icons { display: flex; flex-wrap: wrap; gap: 5px; font-size: 1.8rem; justify-self: start; }
         .divider { width: 80%; border-bottom: 3px solid var(--dark); margin: 10px 0; }
         .answer-section {
             display: flex;
@@ -461,7 +462,7 @@
         @media (max-width: 480px) {
             body { padding: 5px; }
             .splash-box h1 { font-size: 2rem; }
-            .step-number { min-width: 50px; font-size: 1.1rem; }
+            .step { grid-template-columns: 50px 1fr; font-size: 1.1rem; }
             .answer-option { font-size: 1.2rem; padding: 8px 14px; min-width: 50px; }
             .header-btn { padding: 4px 8px; font-size: 0.8rem; }
         }
