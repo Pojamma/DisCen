@@ -129,3 +129,28 @@ Added hideable project tabs with tray and context menu to Task Master. The X but
 ### Commits
 - `7e7af12` — Add multi-select status filter chips and On Hold status to Task Master
 - `309b92f` — Add hideable project tabs with tray and context menu to Task Master
+
+## Session 2026-11-03 18:00 PST
+
+### Summary
+Built the full Math Adventure game — a math practice app for 5-6 year olds with server-side persistent storage, pretend monetization (coin rewards and prize store), user accounts, badges, and an admin panel for parents. Created a deploy script for the project. Deployed everything to the DisCen production server.
+
+### Changes
+- `src/math-adventure-data.js` — **Created.** Data access layer: JSON file read/write with promise-queue mutex, PBKDF2 password hashing via Node.js `crypto`, auto-creates `data/` directory and seeds default prizes on first access
+- `src/math-adventure-routes.js` — **Created.** Express router with 20 REST API endpoints: auth (master password setup/verify/change, user login), user CRUD, prize CRUD, purchase/fulfillment, admin stats/export/import/reset. In-memory session management (2hr TTL) and rate limiting (10 attempts/min/IP)
+- `src/server.js` — Added `express.json()` middleware and mounted math-adventure router at `/api/math-adventure`
+- `websites/games/math-adventure/index.html` — **Created.** Single-page game: splash/login screen, user selection, math game engine (add/subtract/multiply/divide, 3 age groups), visual emoji representation with CSS grid alignment, 4-choice answer buttons, coin system (5 base + first-try/streak/bonus multipliers), prize store, 12 badges, profile with monthly calendar, full admin panel (5 tabs), Web Audio API sound effects, confetti animations, responsive design
+- `websites/games/math-adventure/technology.md` — **Created.** Full technology documentation covering architecture, backend, frontend, infrastructure, and dependencies
+- `websites/main/public/index.html` — Added "Math Adventure" entry to the entertainment items array
+- `websites/EJ-EV/menu.html` — Added "Math" button linking directly to Math Adventure (bypasses `openGame()` since it has its own auth)
+- `discen.conf` — Added nginx `proxy_pass` block for `/api/math-adventure/` to Node.js on port 3001
+- `.gitignore` — Added `data/` to prevent committing user data and password hashes
+- `deploy.sh` — **Created.** Deployment script: commit, push, SSH pull, conditional npm install, SELinux restorecon, conditional nginx reload, service restart, health check verification
+- `PRD-math-adventure.md` — **Created.** Committed the planning/requirements document
+- `math-game-claude-v1.html` — Deleted standalone prototype (superseded by Math Adventure)
+
+### Commits
+- `0ee8c22` — Add Math Adventure game with server-side persistence and admin panel
+- `193e18f` — Fix vertical alignment in Math Adventure visual representation
+- `4eaf631` — Add deploy script and Math Adventure technology docs
+- `ebf2c29` — Add Math Adventure PRD and remove standalone prototype HTML
