@@ -102,6 +102,11 @@
             font-family: inherit;
             margin: 5px 0;
         }
+        .splash-box .pw-wrapper input[type="password"],
+        .splash-box .pw-wrapper input[type="text"] {
+            width: 100%;
+            max-width: none;
+        }
         .splash-box input:focus { outline: none; border-color: var(--primary); }
 
         /* ── User Select Screen ──────────────────────────────── */
@@ -374,6 +379,32 @@
             border-radius: 8px; font-family: inherit; font-size: 1rem;
         }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); }
+        .pw-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 80%;
+            max-width: 300px;
+        }
+        .pw-wrapper input {
+            width: 100%;
+            padding-right: 44px;
+        }
+        .pw-toggle {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 4px 6px;
+            line-height: 1;
+            color: #888;
+            border-radius: 6px;
+        }
+        .pw-toggle:hover { background: #eee; }
+        .form-group .pw-wrapper { width: 100%; max-width: none; }
         .form-row { display: flex; gap: 10px; }
         .form-row .form-group { flex: 1; }
         .stat-bar-container { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
@@ -849,8 +880,8 @@ function showSetupForm() {
     const el = document.getElementById('splash-content');
     el.innerHTML = `
         <p style="margin-bottom:15px;color:#666;">First time? Create a parent password to get started.</p>
-        <input type="password" id="setup-pw" placeholder="Create password" autocomplete="new-password"><br>
-        <input type="password" id="setup-pw2" placeholder="Confirm password" autocomplete="new-password"><br>
+        ${pwFieldHtml('setup-pw', 'Create password', 'new-password')}<br>
+        ${pwFieldHtml('setup-pw2', 'Confirm password', 'new-password')}<br>
         <p id="setup-error" style="color:var(--error);min-height:20px;margin:5px 0;"></p>
         <button class="btn btn-primary" onclick="doSetup()" style="margin:5px;">Set Password</button>
         <br>
@@ -862,7 +893,7 @@ function showLoginForm() {
     const el = document.getElementById('splash-content');
     el.innerHTML = `
         <p style="margin-bottom:15px;color:#666;">Enter the parent password to manage accounts, or play as guest.</p>
-        <input type="password" id="login-pw" placeholder="Parent password" autocomplete="current-password"><br>
+        ${pwFieldHtml('login-pw', 'Parent password', 'current-password')}<br>
         <p id="login-error" style="color:var(--error);min-height:20px;margin:5px 0;"></p>
         <button class="btn btn-primary" onclick="doLogin()" style="margin:5px;">Enter</button>
         <br>
@@ -947,7 +978,7 @@ function promptUserLogin(user) {
         <div style="text-align:center;width:100%;">
             <div style="font-size:4rem;">${user.avatar}</div>
             <h3>${esc(user.username)}</h3>
-            <input type="password" id="user-pw" placeholder="Your password" style="padding:10px;font-size:1.1rem;border:3px solid var(--secondary);border-radius:12px;text-align:center;margin:10px 0;width:80%;max-width:250px;">
+            ${pwFieldHtml('user-pw', 'Your password')}
             <p id="user-login-error" style="color:var(--error);min-height:20px;"></p>
             <button class="btn btn-primary" onclick="doUserLogin('${user.id}')">Play!</button>
             <button class="btn btn-secondary" onclick="showUserSelect()" style="margin-left:8px;">Back</button>
@@ -971,6 +1002,11 @@ async function doUserLogin(userId) {
         authToken = res.token;
         currentUser = res.user;
         isGuest = false;
+        // If password reset is required, show the change password screen
+        if (res.passwordResetRequired) {
+            showForcePasswordChange(userId);
+            return;
+        }
         // Check if we already had admin token - keep admin status
         showScreen('game');
         applySettings(currentUser.settings || {});
@@ -981,6 +1017,51 @@ async function doUserLogin(userId) {
     }
 }
 
+function showForcePasswordChange(userId) {
+    const grid = document.getElementById('user-grid');
+    grid.innerHTML = `
+        <div style="text-align:center;width:100%;">
+            <div style="font-size:3rem;">${currentUser.avatar}</div>
+            <h3>Hi ${esc(currentUser.username)}!</h3>
+            <p style="color:#666;margin:10px 0;">You need to pick a new password.</p>
+            ${pwFieldHtml('force-new-pw', 'New password')}
+            <div style="margin-top:8px;">
+            ${pwFieldHtml('force-new-pw2', 'Type it again')}
+            </div>
+            <p id="force-pw-error" style="color:var(--error);min-height:20px;margin:8px 0;"></p>
+            <button class="btn btn-success" onclick="doForcePasswordChange('${userId}')">Save New Password</button>
+        </div>
+    `;
+    showScreen('user-select');
+    setTimeout(() => {
+        const inp = document.getElementById('force-new-pw');
+        if (inp) {
+            inp.focus();
+            inp.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('force-new-pw2').focus(); });
+        }
+        const inp2 = document.getElementById('force-new-pw2');
+        if (inp2) inp2.addEventListener('keydown', e => { if (e.key === 'Enter') doForcePasswordChange(userId); });
+    }, 50);
+}
+
+async function doForcePasswordChange(userId) {
+    const pw1 = document.getElementById('force-new-pw').value;
+    const pw2 = document.getElementById('force-new-pw2').value;
+    const err = document.getElementById('force-pw-error');
+    if (!pw1 || pw1.length < 2) { err.textContent = 'Password must be at least 2 characters'; return; }
+    if (pw1 !== pw2) { err.textContent = 'Passwords do not match'; return; }
+    try {
+        const res = await api('POST', '/users/' + userId + '/change-password', { newPassword: pw1 });
+        currentUser = res.user;
+        showScreen('game');
+        applySettings(currentUser.settings || {});
+        updateGameUI();
+        generateNewProblem();
+    } catch (e) {
+        err.textContent = e.error || 'Could not change password';
+    }
+}
+
 function showCreateUser() {
     const grid = document.getElementById('user-grid');
     const avatars = ['&#x1F98A;','&#x1F431;','&#x1F436;','&#x1F43B;','&#x1F984;','&#x1F981;','&#x1F43C;','&#x1F430;','&#x1F42F;','&#x1F9A5;','&#x1F438;','&#x1F422;'];
@@ -988,7 +1069,7 @@ function showCreateUser() {
         <div style="text-align:center;width:100%;">
             <h3>Create New Player</h3>
             <div class="form-group"><label>Name</label><input type="text" id="new-username" placeholder="Player name" style="text-align:center;"></div>
-            <div class="form-group"><label>Password (simple is OK for kids)</label><input type="password" id="new-password" placeholder="Password" style="text-align:center;"></div>
+            <div class="form-group"><label>Password (simple is OK for kids)</label>${pwFieldHtml('new-password', 'Password')}</div>
             <div class="form-group"><label>Pick an Avatar</label>
                 <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;" id="avatar-picker">
                     ${avatars.map((a, i) => `<span style="font-size:2.5rem;cursor:pointer;padding:5px;border:3px solid transparent;border-radius:10px;" onclick="pickAvatar(this,'${a}')" ${i === 0 ? 'class="selected-avatar"' : ''}>${a}</span>`).join('')}
@@ -1036,7 +1117,7 @@ function showAdminLogin() {
     grid.innerHTML = `
         <div style="text-align:center;width:100%;">
             <h3>Admin Login</h3>
-            <input type="password" id="admin-pw" placeholder="Parent password" style="padding:10px;font-size:1.1rem;border:3px solid var(--secondary);border-radius:12px;text-align:center;margin:10px 0;width:80%;max-width:250px;">
+            ${pwFieldHtml('admin-pw', 'Parent password')}
             <p id="admin-login-error" style="color:var(--error);min-height:20px;"></p>
             <button class="btn btn-primary" onclick="doAdminLogin()">Login</button>
             <button class="btn btn-secondary" onclick="showUserSelect()" style="margin-left:8px;">Back</button>
@@ -1663,8 +1744,9 @@ async function loadAdminUsers() {
         } else {
             html += '<table class="admin-table"><tr><th>Avatar</th><th>Name</th><th>Actions</th></tr>';
             users.forEach(u => {
-                html += `<tr><td>${u.avatar}</td><td>${esc(u.username)}</td><td>
-                    <button class="btn btn-small btn-secondary" onclick="adminResetUser('${u.id}','${esc(u.username)}')">Reset</button>
+                html += `<tr><td>${u.avatar}</td><td>${esc(u.username)}</td><td style="display:flex;gap:4px;flex-wrap:wrap;">
+                    <button class="btn btn-small btn-primary" onclick="adminResetPassword('${u.id}','${esc(u.username)}')">Reset Pwd</button>
+                    <button class="btn btn-small btn-secondary" onclick="adminResetUser('${u.id}','${esc(u.username)}')">Reset Progress</button>
                     <button class="btn btn-small btn-danger" onclick="adminDeleteUser('${u.id}','${esc(u.username)}')">Delete</button>
                 </td></tr>`;
             });
@@ -1682,7 +1764,7 @@ function adminCreateUser() {
     panel.innerHTML = `
         <h3>Add New Player</h3>
         <div class="form-group"><label>Name</label><input type="text" id="admin-new-name"></div>
-        <div class="form-group"><label>Password</label><input type="password" id="admin-new-pw"></div>
+        <div class="form-group"><label>Password</label>${pwFieldHtml('admin-new-pw', 'Password')}</div>
         <div class="form-group"><label>Avatar</label>
             <select id="admin-new-avatar" style="font-size:1.5rem;">${avatars.map(a => `<option value="${a}">${a}</option>`).join('')}</select>
         </div>
@@ -1713,6 +1795,17 @@ async function adminDeleteUser(id, name) {
         loadAdminUsers();
     } catch (e) {
         alert(e.error || 'Failed to delete user');
+    }
+}
+
+async function adminResetPassword(id, name) {
+    if (!confirm(`Reset password for "${name}"? They will need to choose a new password next time they sign in.`)) return;
+    try {
+        await api('POST', '/users/' + id + '/reset-password');
+        alert(`Password reset for "${name}". They will choose a new password on their next login.`);
+        loadAdminUsers();
+    } catch (e) {
+        alert(e.error || 'Failed to reset password');
     }
 }
 
@@ -1894,8 +1987,8 @@ function loadAdminSettings() {
     const panel = document.getElementById('admin-settings');
     panel.innerHTML = `
         <h3>Change Parent Password</h3>
-        <div class="form-group"><label>Current Password</label><input type="password" id="settings-old-pw"></div>
-        <div class="form-group"><label>New Password</label><input type="password" id="settings-new-pw"></div>
+        <div class="form-group"><label>Current Password</label>${pwFieldHtml('settings-old-pw', 'Current password')}</div>
+        <div class="form-group"><label>New Password</label>${pwFieldHtml('settings-new-pw', 'New password')}</div>
         <p id="settings-pw-error" style="color:var(--error);min-height:20px;"></p>
         <button class="btn btn-primary" onclick="adminChangePassword()">Change Password</button>
         <hr style="margin:20px 0;">
@@ -2001,6 +2094,23 @@ function esc(s) {
     const d = document.createElement('div');
     d.textContent = s;
     return d.innerHTML;
+}
+
+function togglePw(inputId, btn) {
+    const inp = document.getElementById(inputId);
+    if (!inp) return;
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        btn.textContent = '\u{1F648}';
+    } else {
+        inp.type = 'password';
+        btn.textContent = '\u{1F441}';
+    }
+}
+
+// Returns HTML for a password input with show/hide toggle
+function pwFieldHtml(id, placeholder, autocomplete) {
+    return `<div class="pw-wrapper"><input type="password" id="${id}" placeholder="${placeholder || ''}" autocomplete="${autocomplete || 'off'}"><button type="button" class="pw-toggle" onclick="togglePw('${id}',this)">\u{1F441}</button></div>`;
 }
 
 // ══════════════════════════════════════════════════════════════════

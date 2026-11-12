@@ -173,7 +173,30 @@ router.post('/auth/login', (req, res) => {
   const token = createSession('user', userId);
   // Return user data (without password hash)
   const { password: pw, ...userData } = user;
-  res.json({ success: true, token, user: userData });
+  res.json({ success: true, token, user: userData, passwordResetRequired: !!user.passwordResetRequired });
+});
+
+// Change user password (user sets their own new password after reset)
+router.post('/users/:id/change-password', requireAuth('user'), (req, res) => {
+  const data = getData();
+  const user = getUserById(data, req.params.id);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  // Only allow if admin or same user
+  if (req.session.type !== 'admin' && req.session.userId !== req.params.id) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  const { newPassword } = req.body;
+  if (!newPassword || newPassword.length < 2) {
+    return res.status(400).json({ error: 'Password must be at least 2 characters' });
+  }
+  const { hash, salt } = hashPassword(newPassword);
+  user.password = { hash, salt };
+  user.passwordResetRequired = false;
+  saveData(data);
+  const { password: pw, ...userData } = user;
+  res.json({ success: true, user: userData });
 });
 
 // ── User Routes ─────────────────────────────────────────────────────
@@ -291,6 +314,18 @@ router.delete('/users/:id', requireAuth('admin'), (req, res) => {
     return res.status(404).json({ error: 'User not found' });
   }
   data.users.splice(idx, 1);
+  saveData(data);
+  res.json({ success: true });
+});
+
+// Reset user password (admin only) - forces new password on next login
+router.post('/users/:id/reset-password', requireAuth('admin'), (req, res) => {
+  const data = getData();
+  const user = getUserById(data, req.params.id);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  user.passwordResetRequired = true;
   saveData(data);
   res.json({ success: true });
 });
