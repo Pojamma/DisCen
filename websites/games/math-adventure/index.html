@@ -672,9 +672,22 @@
         <h3>Bonus Rounds</h3>
         <p>Every 10th problem is a bonus round worth double coins!</p>
         <h3 style="margin-top:8px;">Coins Earned:</h3>
-        <ul style="margin:8px 0 0 20px; line-height:1.8;">
-            <li>Correct answer: <strong>5 coins</strong></li>
-            <li>First try bonus: <strong>+3 coins</strong></li>
+        <p style="margin:8px 0 4px;"><strong>Addition / Subtraction:</strong></p>
+        <ul style="margin:0 0 0 20px; line-height:1.8;">
+            <li>1st try: <strong>5 coins</strong></li>
+            <li>2nd try: <strong>3 coins</strong></li>
+            <li>3rd try: <strong>1 coin</strong></li>
+            <li>Miss (all wrong): <strong>0 coins</strong></li>
+        </ul>
+        <p style="margin:8px 0 4px;"><strong>Multiplication / Division:</strong></p>
+        <ul style="margin:0 0 0 20px; line-height:1.8;">
+            <li>1st try: <strong>7 coins</strong></li>
+            <li>2nd try: <strong>5 coins</strong></li>
+            <li>3rd try: <strong>3 coins</strong></li>
+            <li>Miss (all wrong): <strong>0 coins</strong></li>
+        </ul>
+        <p style="margin:8px 0 4px;"><strong>Bonuses:</strong></p>
+        <ul style="margin:0 0 0 20px; line-height:1.8;">
             <li>Streak bonus: <strong>+1 per 5 streak</strong></li>
             <li>Bonus round: <strong>double coins!</strong></li>
         </ul>
@@ -693,12 +706,14 @@
             <button class="admin-tab" onclick="switchAdminTab('prizes')">Prizes</button>
             <button class="admin-tab" onclick="switchAdminTab('fulfillment')">Fulfillment</button>
             <button class="admin-tab" onclick="switchAdminTab('stats')">Stats</button>
+            <button class="admin-tab" onclick="switchAdminTab('logs')">Problem Logs</button>
             <button class="admin-tab" onclick="switchAdminTab('settings')">Settings</button>
         </div>
         <div id="admin-users" class="admin-panel active"></div>
         <div id="admin-prizes" class="admin-panel"></div>
         <div id="admin-fulfillment" class="admin-panel"></div>
         <div id="admin-stats" class="admin-panel"></div>
+        <div id="admin-logs" class="admin-panel"></div>
         <div id="admin-settings" class="admin-panel"></div>
     </div>
 </div>
@@ -829,7 +844,7 @@ let correctAnswer = 0;
 let currentIcon = '';
 let problemCount = 0;
 let isBonusRound = false;
-let firstTry = true;
+let guessCount = 0;
 const icons = ['&#x1F34E;','&#x1F34C;','&#x1F352;','&#x1F347;','&#x1F34A;','&#x1F353;','&#x1F349;','&#x1F34D;','&#x1F95D;','&#x1F96D;'];
 const iconChars = ['\u{1F34E}','\u{1F34C}','\u{1F352}','\u{1F347}','\u{1F34A}','\u{1F353}','\u{1F349}','\u{1F34D}','\u{1F95D}','\u{1F96D}'];
 
@@ -1191,9 +1206,17 @@ function applySettings(settings) {
     }
 }
 
+function calculateBaseCoins(operation, guessCount) {
+    const isAdvanced = (operation === 'multiplication' || operation === 'division');
+    if (guessCount === 1) return isAdvanced ? 7 : 5;
+    if (guessCount === 2) return isAdvanced ? 5 : 3;
+    if (guessCount === 3) return isAdvanced ? 3 : 1;
+    return 0;
+}
+
 function generateNewProblem() {
     problemCount++;
-    firstTry = true;
+    guessCount = 0;
 
     // Bonus round every 10th problem
     isBonusRound = (problemCount % 10 === 0) && problemCount > 0;
@@ -1313,23 +1336,46 @@ function generateAnswerOptions() {
     });
 }
 
+function revealAnswer() {
+    const sym = { addition: '+', subtraction: '-', multiplication: '\u00D7', division: '\u00F7' }[currentOperation];
+    document.getElementById('step2-number').textContent = `${sym} ${secondNumber}`;
+    const secondEl = document.getElementById('second-number-icons');
+    secondEl.textContent = '';
+    if (currentOperation === 'addition' || currentOperation === 'subtraction') {
+        for (let i = 0; i < Math.min(secondNumber, 20); i++) secondEl.textContent += currentIcon + ' ';
+    }
+}
+
+function logProblem(coinsEarned, wasCorrect) {
+    if (isGuest || !currentUser) return null;
+    return {
+        timestamp: new Date().toISOString(),
+        operation: currentOperation,
+        ageGroup: getAgeGroup(),
+        firstNumber: firstNumber,
+        secondNumber: secondNumber,
+        correctAnswer: correctAnswer,
+        guesses: guessCount,
+        coinsEarned: coinsEarned,
+        correct: wasCorrect
+    };
+}
+
 function checkAnswer(selected, btnEl) {
     const msgEl = document.getElementById('message');
-    // Don't allow more clicks after correct
+    // Don't allow more clicks after answered
     if (msgEl.dataset.answered === 'true') return;
 
+    guessCount++;
     const stats = getStats();
     const today = new Date().toISOString().slice(0, 10);
 
-    // Track operation attempt
-    if (stats.problemsByOperation[currentOperation] !== undefined) {
-        // Only count on first try per problem
-        if (firstTry) {
-            stats.totalProblems++;
-            stats.problemsByOperation[currentOperation]++;
-            if (!stats.dailyActivity[today]) stats.dailyActivity[today] = 0;
-            stats.dailyActivity[today]++;
-        }
+    // Track operation attempt (only on first guess per problem)
+    if (guessCount === 1 && stats.problemsByOperation[currentOperation] !== undefined) {
+        stats.totalProblems++;
+        stats.problemsByOperation[currentOperation]++;
+        if (!stats.dailyActivity[today]) stats.dailyActivity[today] = 0;
+        stats.dailyActivity[today]++;
     }
 
     if (selected === secondNumber) {
@@ -1343,26 +1389,17 @@ function checkAnswer(selected, btnEl) {
         stats.currentStreak++;
         if (stats.currentStreak > stats.bestStreak) stats.bestStreak = stats.currentStreak;
 
-        // Calculate coins
-        let coins = 5;
-        if (firstTry) coins += 3; // first try bonus
+        // Calculate coins with new formula
+        let coins = calculateBaseCoins(currentOperation, guessCount);
         coins += Math.floor(stats.currentStreak / 5); // streak bonus
         if (isBonusRound) {
             coins *= 2;
             stats.bonusRoundsCompleted++;
         }
 
-        awardCoins(coins);
+        if (coins > 0) awardCoins(coins);
         updateStreakDisplay(stats.currentStreak);
-
-        // Reveal the hidden number
-        const sym = { addition: '+', subtraction: '-', multiplication: '\u00D7', division: '\u00F7' }[currentOperation];
-        document.getElementById('step2-number').textContent = `${sym} ${secondNumber}`;
-        const secondEl = document.getElementById('second-number-icons');
-        secondEl.textContent = '';
-        if (currentOperation === 'addition' || currentOperation === 'subtraction') {
-            for (let i = 0; i < Math.min(secondNumber, 20); i++) secondEl.textContent += currentIcon + ' ';
-        }
+        revealAnswer();
 
         // Show message
         const messages = [
@@ -1384,8 +1421,9 @@ function checkAnswer(selected, btnEl) {
         // Check badges
         checkBadges(stats);
 
-        // Save stats
-        saveStats(stats);
+        // Log problem and save
+        const logEntry = logProblem(coins, true);
+        saveStats(stats, logEntry, true);
 
         // Auto-advance after delay
         setTimeout(() => {
@@ -1397,24 +1435,54 @@ function checkAnswer(selected, btnEl) {
         playWrongSound();
         btnEl.classList.add('incorrect');
         btnEl.style.pointerEvents = 'none';
-        firstTry = false;
         stats.wrongAnswers++;
         stats.currentStreak = 0;
         updateStreakDisplay(0);
 
-        const messages = [
-            'Try again!', 'Not quite!', 'Keep trying!',
-            'Almost!', 'Give it another go!', 'You can do it!'
-        ];
-        msgEl.textContent = messages[Math.floor(Math.random() * messages.length)];
-        msgEl.style.color = '#F44336';
+        // Check if 3 wrong guesses (exhausted) — with 4 options, 3 wrong = answer revealed
+        if (guessCount >= 3) {
+            // Auto-reveal correct answer
+            msgEl.dataset.answered = 'true';
+            // Disable all remaining buttons, highlight correct one green
+            document.querySelectorAll('#answer-options .answer-option').forEach(b => {
+                b.style.pointerEvents = 'none';
+                if (parseInt(b.textContent) === secondNumber) {
+                    b.classList.add('correct');
+                }
+            });
 
-        setTimeout(() => {
-            btnEl.classList.remove('incorrect');
-            btnEl.style.opacity = '0.4';
-        }, 600);
+            setTimeout(() => {
+                btnEl.classList.remove('incorrect');
+                btnEl.style.opacity = '0.4';
+                revealAnswer();
+                msgEl.innerHTML = `The answer is <strong>${secondNumber}</strong>!`;
+                msgEl.style.color = '#FF9800';
 
-        saveStats(stats);
+                // Log problem as missed (0 coins)
+                const logEntry = logProblem(0, false);
+                saveStats(stats, logEntry, false);
+
+                // Auto-advance after 2s
+                setTimeout(() => {
+                    msgEl.dataset.answered = 'false';
+                    generateNewProblem();
+                }, 2000);
+            }, 800);
+        } else {
+            const messages = [
+                'Try again!', 'Not quite!', 'Keep trying!',
+                'Almost!', 'Give it another go!', 'You can do it!'
+            ];
+            msgEl.textContent = messages[Math.floor(Math.random() * messages.length)];
+            msgEl.style.color = '#F44336';
+
+            setTimeout(() => {
+                btnEl.classList.remove('incorrect');
+                btnEl.style.opacity = '0.4';
+            }, 600);
+
+            saveStats(stats);
+        }
     }
 }
 
@@ -1447,7 +1515,7 @@ function getBadges() {
     return [...(currentUser.badges || [])];
 }
 
-async function saveStats(stats) {
+async function saveStats(stats, logEntry, wasCorrect) {
     if (isGuest || !currentUser) {
         Object.assign(guestStats, stats);
         return;
@@ -1459,13 +1527,26 @@ async function saveStats(stats) {
         ageGroup: getAgeGroup(),
         soundEnabled
     };
+    const payload = {
+        stats: currentUser.stats,
+        coins: currentUser.coins,
+        badges: currentUser.badges,
+        settings: currentUser.settings
+    };
+    // Include log entry if present
+    if (logEntry) {
+        payload.newLogEntry = logEntry;
+        // Build incremental statsByOperationAndAge update
+        const op = logEntry.operation;
+        const age = logEntry.ageGroup;
+        payload.statsByOperationAndAge = {
+            [op]: {
+                [age]: { attempted: 1, correct: wasCorrect ? 1 : 0 }
+            }
+        };
+    }
     try {
-        const updated = await api('PUT', '/users/' + currentUser.id, {
-            stats: currentUser.stats,
-            coins: currentUser.coins,
-            badges: currentUser.badges,
-            settings: currentUser.settings
-        });
+        const updated = await api('PUT', '/users/' + currentUser.id, payload);
         currentUser = updated;
     } catch (e) {
         console.error('Save failed:', e);
@@ -1725,6 +1806,7 @@ function switchAdminTab(tab) {
         case 'prizes': loadAdminPrizes(); break;
         case 'fulfillment': loadAdminFulfillment(); break;
         case 'stats': loadAdminStats(); break;
+        case 'logs': loadAdminLogSummary(); loadAdminLogs(); break;
         case 'settings': loadAdminSettings(); break;
     }
 }
@@ -1980,6 +2062,193 @@ async function loadAdminStats() {
         panel.innerHTML = html;
     } catch (e) {
         panel.innerHTML = '<p style="color:var(--error);">Could not load stats.</p>';
+    }
+}
+
+// ── Admin Problem Logs ──────────────────────────────────────────
+let logFilters = { userId: '', operation: '', ageGroup: '', sort: 'date-desc', offset: 0 };
+let logUsers = []; // cached user list for filter dropdown
+
+async function loadAdminLogs() {
+    const panel = document.getElementById('admin-logs');
+
+    // Fetch user list for filter dropdown (cached)
+    if (logUsers.length === 0) {
+        try { logUsers = await api('GET', '/users'); } catch(e) { logUsers = []; }
+    }
+
+    // Build filter bar + summary placeholder + table placeholder
+    let html = `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-bottom:12px;">
+        <div><label style="font-size:0.8rem;font-weight:bold;display:block;">Child</label>
+            <select id="log-filter-user" style="padding:6px;border-radius:6px;border:1px solid #ccc;">
+                <option value="">All</option>
+                ${logUsers.map(u => `<option value="${u.id}" ${logFilters.userId === u.id ? 'selected' : ''}>${esc(u.username)}</option>`).join('')}
+            </select></div>
+        <div><label style="font-size:0.8rem;font-weight:bold;display:block;">Operation</label>
+            <select id="log-filter-op" style="padding:6px;border-radius:6px;border:1px solid #ccc;">
+                <option value="">All</option>
+                <option value="addition" ${logFilters.operation==='addition'?'selected':''}>Addition</option>
+                <option value="subtraction" ${logFilters.operation==='subtraction'?'selected':''}>Subtraction</option>
+                <option value="multiplication" ${logFilters.operation==='multiplication'?'selected':''}>Multiplication</option>
+                <option value="division" ${logFilters.operation==='division'?'selected':''}>Division</option>
+            </select></div>
+        <div><label style="font-size:0.8rem;font-weight:bold;display:block;">Age Level</label>
+            <select id="log-filter-age" style="padding:6px;border-radius:6px;border:1px solid #ccc;">
+                <option value="">All</option>
+                <option value="3-5" ${logFilters.ageGroup==='3-5'?'selected':''}>3-5</option>
+                <option value="6-8" ${logFilters.ageGroup==='6-8'?'selected':''}>6-8</option>
+                <option value="9+" ${logFilters.ageGroup==='9+'?'selected':''}>9+</option>
+            </select></div>
+        <div><label style="font-size:0.8rem;font-weight:bold;display:block;">Sort</label>
+            <select id="log-filter-sort" style="padding:6px;border-radius:6px;border:1px solid #ccc;">
+                <option value="date-desc" ${logFilters.sort==='date-desc'?'selected':''}>Newest First</option>
+                <option value="date-asc" ${logFilters.sort==='date-asc'?'selected':''}>Oldest First</option>
+                <option value="guesses-desc" ${logFilters.sort==='guesses-desc'?'selected':''}>Most Guesses</option>
+                <option value="guesses-asc" ${logFilters.sort==='guesses-asc'?'selected':''}>Least Guesses</option>
+            </select></div>
+        <button class="btn btn-small btn-primary" onclick="applyLogFilters()">Apply</button>
+    </div>
+    <div id="log-summary-cards"></div>
+    <div id="log-table-container" style="margin-top:10px;"></div>`;
+    panel.innerHTML = html;
+
+    // Load the table with current filters
+    await fetchLogTable();
+}
+
+function applyLogFilters() {
+    logFilters.userId = document.getElementById('log-filter-user').value;
+    logFilters.operation = document.getElementById('log-filter-op').value;
+    logFilters.ageGroup = document.getElementById('log-filter-age').value;
+    logFilters.sort = document.getElementById('log-filter-sort').value;
+    logFilters.offset = 0;
+    fetchLogTable();
+}
+
+async function fetchLogTable() {
+    const container = document.getElementById('log-table-container');
+    if (!container) return;
+    container.innerHTML = '<p style="color:#888;">Loading...</p>';
+
+    const params = new URLSearchParams();
+    if (logFilters.userId) params.set('userId', logFilters.userId);
+    if (logFilters.operation) params.set('operation', logFilters.operation);
+    if (logFilters.ageGroup) params.set('ageGroup', logFilters.ageGroup);
+    if (logFilters.sort) params.set('sort', logFilters.sort);
+    params.set('limit', '50');
+    params.set('offset', logFilters.offset);
+
+    try {
+        const data = await api('GET', '/admin/problem-logs?' + params.toString());
+        if (data.entries.length === 0) {
+            container.innerHTML = '<p style="color:#888;">No problem logs found.</p>';
+            return;
+        }
+        const symbols = { addition: '+', subtraction: '-', multiplication: '\u00D7', division: '\u00F7' };
+        let html = `<div style="overflow-x:auto;"><table class="admin-table"><tr>
+            <th>Date</th><th>Player</th><th>Operation</th><th>Problem</th><th>Age</th><th>Guesses</th><th>Coins</th>
+        </tr>`;
+        data.entries.forEach(e => {
+            const guessColor = e.guesses === 1 ? '#4CAF50' : e.guesses === 2 ? '#FFC107' : e.guesses === 3 ? '#FF9800' : '#F44336';
+            const sym = symbols[e.operation] || '?';
+            const problem = `${e.firstNumber} ${sym} ? = ${e.correctAnswer}`;
+            const date = e.timestamp ? new Date(e.timestamp).toLocaleDateString() : '?';
+            html += `<tr>
+                <td style="font-size:0.8rem;">${date}</td>
+                <td>${e.avatar || ''} ${esc(e.username || '')}</td>
+                <td>${e.operation || ''}</td>
+                <td style="font-family:monospace;">${problem}</td>
+                <td>${e.ageGroup || ''}</td>
+                <td style="color:${guessColor};font-weight:bold;">${e.guesses || 0}</td>
+                <td>${e.coinsEarned || 0}</td>
+            </tr>`;
+        });
+        html += '</table></div>';
+
+        // Pagination
+        const showing = Math.min(logFilters.offset + 50, data.total);
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:0.85rem;">
+            <span>Showing ${logFilters.offset + 1}-${showing} of ${data.total}</span>
+            <div style="display:flex;gap:6px;">
+                ${logFilters.offset > 0 ? '<button class="btn btn-small btn-secondary" onclick="logPagePrev()">Prev</button>' : ''}
+                ${logFilters.offset + 50 < data.total ? '<button class="btn btn-small btn-secondary" onclick="logPageNext()">Next</button>' : ''}
+            </div>
+        </div>`;
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = '<p style="color:var(--error);">Could not load problem logs.</p>';
+    }
+}
+
+function logPageNext() {
+    logFilters.offset += 50;
+    fetchLogTable();
+}
+
+function logPagePrev() {
+    logFilters.offset = Math.max(0, logFilters.offset - 50);
+    fetchLogTable();
+}
+
+async function loadAdminLogSummary() {
+    const container = document.getElementById('log-summary-cards');
+    if (!container) {
+        // Panel not rendered yet, will be called after loadAdminLogs
+        setTimeout(loadAdminLogSummary, 100);
+        return;
+    }
+    container.innerHTML = '<p style="color:#888;">Loading summary...</p>';
+
+    try {
+        const data = await api('GET', '/admin/problem-logs/summary');
+        if (data.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+        let html = '';
+        const opLabels = { addition: 'Addition', subtraction: 'Subtraction', multiplication: 'Multiplication', division: 'Division' };
+        data.forEach(user => {
+            // Build summary cards per operation+age for this user
+            const combos = [];
+            for (const [op, ageGroups] of Object.entries(user.breakdown)) {
+                for (const [age, vals] of Object.entries(ageGroups)) {
+                    if (vals.attempted >= 5) {
+                        const accuracy = Math.round((vals.correct / vals.attempted) * 100);
+                        let bgColor, textColor;
+                        if (accuracy >= 80) { bgColor = '#C8E6C9'; textColor = '#2E7D32'; }
+                        else if (accuracy >= 60) { bgColor = '#FFF9C4'; textColor = '#F57F17'; }
+                        else { bgColor = '#FFCDD2'; textColor = '#C62828'; }
+                        combos.push({ op, age, accuracy, attempted: vals.attempted, bgColor, textColor });
+                    }
+                }
+            }
+            if (combos.length === 0) return;
+
+            html += `<div style="margin-bottom:10px;">
+                <strong>${user.avatar} ${esc(user.username)}</strong>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">`;
+            combos.forEach(c => {
+                html += `<div style="background:${c.bgColor};color:${c.textColor};padding:6px 10px;border-radius:8px;font-size:0.8rem;font-weight:bold;">
+                    ${opLabels[c.op] || c.op} (${c.age}): ${c.accuracy}%
+                    <span style="font-weight:normal;opacity:0.7;">(${c.attempted})</span>
+                </div>`;
+            });
+            html += `</div>`;
+
+            // Highlight weak areas
+            if (user.weakAreas.length > 0) {
+                user.weakAreas.forEach(w => {
+                    html += `<div style="background:#FFCDD2;color:#C62828;padding:8px 12px;border-radius:8px;margin-top:6px;font-size:0.85rem;">
+                        <strong>${esc(user.username)}</strong> needs work on <strong>${opLabels[w.operation] || w.operation}</strong>
+                        (Ages ${w.ageGroup}): ${w.accuracy}% accuracy (${w.attempted} problems)
+                    </div>`;
+                });
+            }
+            html += `</div>`;
+        });
+        container.innerHTML = html || '<p style="color:#888;">Not enough data for summary yet (need 5+ problems per category).</p>';
+    } catch (e) {
+        container.innerHTML = '<p style="color:var(--error);">Could not load summary.</p>';
     }
 }
 

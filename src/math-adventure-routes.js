@@ -248,6 +248,8 @@ router.post('/users', requireAuth('admin'), (req, res) => {
     },
     badges: [],
     purchasedPrizes: [],
+    problemLog: [],
+    statsByOperationAndAge: {},
     settings: {
       operations: ['addition', 'subtraction'],
       ageGroup: '3-5',
@@ -298,6 +300,25 @@ router.put('/users/:id', requireAuth('user'), (req, res) => {
   if (updates.settings) user.settings = { ...user.settings, ...updates.settings };
   if (updates.avatar) user.avatar = updates.avatar;
   if (updates.username && req.session.type === 'admin') user.username = updates.username;
+  // Problem log entry
+  if (updates.newLogEntry && typeof updates.newLogEntry === 'object') {
+    if (!user.problemLog) user.problemLog = [];
+    user.problemLog.push(updates.newLogEntry);
+  }
+  // Stats by operation and age
+  if (updates.statsByOperationAndAge) {
+    if (!user.statsByOperationAndAge) user.statsByOperationAndAge = {};
+    for (const [op, ageGroups] of Object.entries(updates.statsByOperationAndAge)) {
+      if (!user.statsByOperationAndAge[op]) user.statsByOperationAndAge[op] = {};
+      for (const [age, vals] of Object.entries(ageGroups)) {
+        if (!user.statsByOperationAndAge[op][age]) {
+          user.statsByOperationAndAge[op][age] = { attempted: 0, correct: 0 };
+        }
+        user.statsByOperationAndAge[op][age].attempted += (vals.attempted || 0);
+        user.statsByOperationAndAge[op][age].correct += (vals.correct || 0);
+      }
+    }
+  }
   user.lastActive = new Date().toISOString();
 
   data.users[userIdx] = user;
@@ -353,6 +374,8 @@ router.post('/users/:id/reset', requireAuth('admin'), (req, res) => {
   };
   user.badges = [];
   user.purchasedPrizes = [];
+  user.problemLog = [];
+  user.statsByOperationAndAge = {};
   saveData(data);
   const { password, ...userData } = user;
   res.json(userData);
@@ -523,6 +546,79 @@ router.post('/admin/import', requireAuth('admin'), (req, res) => {
   }
   saveData(importData);
   res.json({ success: true });
+});
+
+// Problem logs (admin only)
+router.get('/admin/problem-logs', requireAuth('admin'), (req, res) => {
+  const data = getData();
+  const { userId, operation, ageGroup, sort, limit, offset } = req.query;
+  const limitN = Math.min(parseInt(limit) || 50, 200);
+  const offsetN = parseInt(offset) || 0;
+
+  // Collect entries from all users (or filtered user)
+  let entries = [];
+  const users = userId ? data.users.filter(u => u.id === userId) : data.users;
+  users.forEach(u => {
+    (u.problemLog || []).forEach(entry => {
+      entries.push({ ...entry, userId: u.id, username: u.username, avatar: u.avatar });
+    });
+  });
+
+  // Filter by operation
+  if (operation) {
+    entries = entries.filter(e => e.operation === operation);
+  }
+  // Filter by age group
+  if (ageGroup) {
+    entries = entries.filter(e => e.ageGroup === ageGroup);
+  }
+
+  // Sort
+  switch (sort) {
+    case 'date-asc':
+      entries.sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
+      break;
+    case 'guesses-desc':
+      entries.sort((a, b) => (b.guesses || 0) - (a.guesses || 0));
+      break;
+    case 'guesses-asc':
+      entries.sort((a, b) => (a.guesses || 0) - (b.guesses || 0));
+      break;
+    default: // date-desc
+      entries.sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+  }
+
+  const total = entries.length;
+  entries = entries.slice(offsetN, offsetN + limitN);
+  res.json({ entries, total });
+});
+
+// Problem logs summary (admin only)
+router.get('/admin/problem-logs/summary', requireAuth('admin'), (req, res) => {
+  const data = getData();
+  const result = data.users.map(u => {
+    const breakdown = u.statsByOperationAndAge || {};
+    // Find weak areas: < 60% accuracy with >= 5 attempts
+    const weakAreas = [];
+    for (const [op, ageGroups] of Object.entries(breakdown)) {
+      for (const [age, vals] of Object.entries(ageGroups)) {
+        if (vals.attempted >= 5) {
+          const accuracy = Math.round((vals.correct / vals.attempted) * 100);
+          if (accuracy < 60) {
+            weakAreas.push({ operation: op, ageGroup: age, accuracy, attempted: vals.attempted });
+          }
+        }
+      }
+    }
+    return {
+      userId: u.id,
+      username: u.username,
+      avatar: u.avatar,
+      breakdown,
+      weakAreas
+    };
+  });
+  res.json(result);
 });
 
 // Nuclear reset
