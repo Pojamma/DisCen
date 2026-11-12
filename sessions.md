@@ -154,3 +154,15 @@ Built the full Math Adventure game — a math practice app for 5-6 year olds wit
 - `193e18f` — Fix vertical alignment in Math Adventure visual representation
 - `4eaf631` — Add deploy script and Math Adventure technology docs
 - `ebf2c29` — Add Math Adventure PRD and remove standalone prototype HTML
+
+## Session 2026-11-11 PST
+
+### Summary
+Added admin password reset for child accounts and show/hide password toggle to Math Adventure. Admins can now reset a child's password from the Users tab, forcing the child to choose a new password on their next login. All password fields throughout the app now have an eye icon toggle for showing/hiding the password, making it easier for young children.
+
+### Changes
+- `src/math-adventure-routes.js` — Added `POST /users/:id/reset-password` (admin only, sets `passwordResetRequired` flag), `POST /users/:id/change-password` (user auth, sets new password and clears reset flag), updated `POST /auth/login` to return `passwordResetRequired` in response
+- `websites/games/math-adventure/index.html` — Added `.pw-wrapper` / `.pw-toggle` CSS for show/hide password toggle; added `togglePw()` and `pwFieldHtml()` utility functions; replaced all raw password inputs with toggle-wrapped versions (setup, login, user login, admin login, create user, admin create user, admin change password); added `showForcePasswordChange()` and `doForcePasswordChange()` for forced password change flow after login; added `adminResetPassword()` function and "Reset Pwd" button to admin Users tab; renamed existing "Reset" button to "Reset Progress" for clarity
+
+### Commits
+- `879dc87` — Add admin password reset for children and show/hide password toggle
