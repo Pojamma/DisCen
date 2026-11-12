@@ -166,3 +166,15 @@ Added admin password reset for child accounts and show/hide password toggle to M
 
 ### Commits
 - `879dc87` — Add admin password reset for children and show/hide password toggle
+
+## Session 2026-11-11 PST (2)
+
+### Summary
+Added guess-based scoring system, per-problem logging, and an admin Problem Logs tab to Math Adventure. The flat coin formula (5 base + 3 first-try bonus) is replaced with a guess-count system where multiplication/division earn more than addition/subtraction. After 3 wrong guesses the correct answer is auto-revealed with 0 coins. Every problem is logged per child and viewable in a new admin tab with filters, pagination, and color-coded "needs work" summary cards.
+
+### Changes
+- `src/math-adventure-routes.js` — Added `problemLog` and `statsByOperationAndAge` fields to user creation; PUT handler now accepts `newLogEntry` (appended to log) and `statsByOperationAndAge` (incremental merge); user reset clears both fields; added `GET /admin/problem-logs` (filterable, sortable, paginated) and `GET /admin/problem-logs/summary` (per-user breakdown with weak areas <60% accuracy, 5+ attempts)
+- `websites/games/math-adventure/index.html` — Replaced `firstTry` boolean with `guessCount` tracker; added `calculateBaseCoins()` (add/sub: 5/3/1/0, mult/div: 7/5/3/0); added `revealAnswer()` and `logProblem()` helpers; rewrote `checkAnswer()` for guess-based scoring and auto-reveal after 3 wrong; updated `saveStats()` to send `newLogEntry` and incremental `statsByOperationAndAge`; added admin "Problem Logs" tab with filter bar (child, operation, age level, sort), "Needs Work" summary cards (green/yellow/red by accuracy), scrollable log table with color-coded guess counts and prev/next pagination; updated Help modal with new coin values
+
+### Commits
+- `a83bbd9` — Add guess-based scoring, problem logs, and admin stats tab
