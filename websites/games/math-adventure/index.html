@@ -433,6 +433,32 @@
         .calendar-grid .day.today { border: 2px solid var(--primary); }
         .calendar-grid .day.empty { background: transparent; }
 
+        /* ── Guess Distribution Chart ────────────────────────── */
+        .guess-dist { margin: 8px 0; }
+        .guess-dist-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+        .guess-dist-label {
+            font-weight: bold;
+            min-width: 18px;
+            text-align: center;
+        }
+        .guess-dist-bar {
+            height: 22px;
+            border-radius: 4px;
+            min-width: 8px;
+            transition: width 0.4s ease;
+        }
+        .guess-dist-count {
+            font-weight: bold;
+            font-size: 0.85rem;
+            min-width: 24px;
+        }
+
         /* ── Floating Coin Animation ──────────────────────────── */
         .floating-coins {
             position: fixed;
@@ -647,6 +673,8 @@
         <div id="profile-stats"></div>
         <h3 style="margin:15px 0 10px;">This Month</h3>
         <div id="profile-calendar"></div>
+        <h3 style="margin:15px 0 10px;">Guess Distribution</h3>
+        <div id="profile-guess-dist"></div>
         <h3 style="margin:15px 0 10px;">My Prizes</h3>
         <div id="profile-prizes"></div>
     </div>
@@ -1764,9 +1792,38 @@ function openProfile() {
     // Calendar
     renderCalendar(stats.dailyActivity);
 
+    // Guess Distribution
+    renderGuessDistribution();
+
     // Prizes
     renderMyPrizes('profile-prizes');
     openModal('modal-profile');
+}
+
+function renderGuessDistribution() {
+    const container = document.getElementById('profile-guess-dist');
+    if (isGuest || !currentUser || !currentUser.problemLog || currentUser.problemLog.length === 0) {
+        container.innerHTML = '<p style="color:#888;font-size:0.9rem;">Play some problems to see your stats!</p>';
+        return;
+    }
+    const counts = { 1: 0, 2: 0, 3: 0 };
+    currentUser.problemLog.forEach(e => {
+        const g = e.guesses;
+        if (g >= 1 && g <= 3) counts[g]++;
+    });
+    const max = Math.max(counts[1], counts[2], counts[3], 1);
+    const colors = { 1: '#4CAF50', 2: '#FFC107', 3: '#FF9800' };
+    let html = '<div class="guess-dist">';
+    for (let g = 1; g <= 3; g++) {
+        const pct = Math.max((counts[g] / max) * 100, 4);
+        html += `<div class="guess-dist-row">
+            <span class="guess-dist-label">${g}</span>
+            <div class="guess-dist-bar" style="width:${pct}%;background:${colors[g]};"></div>
+            <span class="guess-dist-count">${counts[g]}</span>
+        </div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
 }
 
 function renderCalendar(activity) {
