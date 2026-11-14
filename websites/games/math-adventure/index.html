@@ -1624,6 +1624,7 @@ async function openStore() {
 
     try {
         const prizes = await api('GET', '/prizes');
+        prizes.sort((a, b) => a.cost - b.cost);
         container.innerHTML = '';
         if (prizes.length === 0) {
             container.innerHTML = '<p style="color:#888;">No prizes available yet.</p>';
@@ -1905,6 +1906,7 @@ async function loadAdminPrizes() {
     const panel = document.getElementById('admin-prizes');
     try {
         const prizes = await api('GET', '/prizes');
+        prizes.sort((a, b) => a.cost - b.cost);
         let html = `<button class="btn btn-success btn-small" onclick="adminAddPrize()" style="margin-bottom:10px;">+ Add Prize</button>`;
         if (prizes.length === 0) {
             html += '<p style="color:#888;">No prizes.</p>';
